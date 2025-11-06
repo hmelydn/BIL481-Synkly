@@ -1,2 +1,2 @@
-# BIL481-Project
+# Synkly
 Projects packages for BIL 481 course - Synkly
