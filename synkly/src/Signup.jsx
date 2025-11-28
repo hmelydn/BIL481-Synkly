@@ -1,36 +1,35 @@
 import React, { useState } from 'react';
 import { handleSignup } from './authService'; 
-import { AlertTriangle } from 'lucide-react'; // Hata ikonunu kullanmak için Lucide'ı içe aktar
+import { AlertTriangle } from 'lucide-react'; 
 
-const Signup = () => {
-    // State tanımlamaları
+const Signup = ({ onNavigate }) => { 
+    // State definitions
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState(''); 
-    const [isLoading, setIsLoading] = useState(false); // Yüklenme durumu
+    const [isLoading, setIsLoading] = useState(false); 
 
-    // Form gönderimini yönetecek asenkron fonksiyon
+    // Handle form submission
     const handleSubmit = async (e) => {
         e.preventDefault(); 
         setError(''); 
-        setIsLoading(true); // Yüklenmeyi başlat
+        setIsLoading(true); 
 
         try {
-            // handleSignup fonksiyonuna üç parametre (email, password, username) gönderiliyor.
             const user = await handleSignup(email, password, username);
             
-            // Eğer kayıt başarılıysa, kullanıcıyı bilgilendir
-            // NOT: alert() yerine daha iyi bir UI feedback mekanizması kullanabilirsiniz.
-            alert(`Sign-up Successful! User UID: ${user.uid}. Welcome, ${username}!`);
+            console.log(`Sign-up Successful! User UID: ${user.uid}. Welcome, ${username}!`);
             
-            // Kayıt başarılı olduktan sonra formu temizle
+            // Clear form upon successful registration
             setUsername('');
             setEmail('');
             setPassword('');
             
+            // Navigate to login after successful signup
+            onNavigate();
+
         } catch (err) {
-            // Hata yakalama
             let errorMessage = "An error occurred during sign-up. Please check your details.";
             
             if (err.code === 'auth/weak-password') {
@@ -43,7 +42,7 @@ const Signup = () => {
             
             setError(errorMessage);
         } finally {
-            setIsLoading(false); // Yüklenmeyi durdur
+            setIsLoading(false); 
         }
     };
 
@@ -55,7 +54,7 @@ const Signup = () => {
                     Create your account to sync free time slots with friends.
                 </p>
 
-                {/* Hata Mesajı Alanı */}
+                {/* Error Message Area */}
                 {error && (
                     <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg flex items-center mb-4" role="alert">
                         <AlertTriangle className="w-5 h-5 mr-3 flex-shrink-0" />
@@ -65,7 +64,7 @@ const Signup = () => {
 
                 <form onSubmit={handleSubmit} className="space-y-4"> 
                     
-                    {/* Username Alanı */}
+                    {/* Username Field */}
                     <div>
                         <label htmlFor="username" className="block text-sm font-medium text-gray-700">Username</label>
                         <input
@@ -79,7 +78,7 @@ const Signup = () => {
                         />
                     </div>
                     
-                    {/* Email Alanı */}
+                    {/* Email Field */}
                     <div>
                         <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
                         <input
@@ -93,7 +92,7 @@ const Signup = () => {
                         />
                     </div>
                     
-                    {/* Parola Alanı */}
+                    {/* Password Field */}
                     <div>
                         <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
                         <input
@@ -106,7 +105,7 @@ const Signup = () => {
                             placeholder="Min 6 characters"
                         />
                         <p className="mt-2 text-xs text-gray-500">
-                           Minimum 6 characters, required for security.
+                            Minimum 6 characters, required for security.
                         </p>
                     </div>
                     
@@ -122,7 +121,7 @@ const Signup = () => {
                 </form>
 
                 <p className="mt-6 text-center text-sm text-gray-600">
-                    Already have an account? <a href="#" className="font-medium text-blue-600 hover:text-blue-500">Log In</a> 
+                    Already have an account? <a href="#" onClick={() => onNavigate('login')} className="font-medium text-blue-600 hover:text-blue-500">Log In</a> 
                 </p>
             </div>
         </div>

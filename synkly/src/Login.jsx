@@ -2,37 +2,30 @@ import React, { useState } from 'react';
 import { handleLogin } from './authService'; 
 import { AlertTriangle, LogIn } from 'lucide-react'; 
 
-const Login = ({ onLoginSuccess, onNavigate }) => { // onNavigate prop'u eklendi
-    // State tanımlamaları
+const Login = ({ onLoginSuccess, onNavigate }) => { 
+    // State definitions
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState(''); 
-    const [isLoading, setIsLoading] = useState(false); // Yüklenme durumu
+    const [isLoading, setIsLoading] = useState(false); 
 
-    // Form gönderimini yönetecek asenkron fonksiyon
+    // Handle form submission
     const handleSubmit = async (e) => {
         e.preventDefault(); 
         setError(''); 
-        setIsLoading(true); // Yüklenmeyi başlat
+        setIsLoading(true); 
 
         try {
-            // handleLogin fonksiyonunu çağır
             const user = await handleLogin(email, password);
             
-            // Başarılı giriş sonrası kullanıcıyı bilgilendir (alert yerine daha iyi bir yöntem kullanılmalı, ancak şimdilik bırakıldı)
-            // alert(`Login Successful! User UID: ${user.uid}. Redirecting...`);
-            
-            // Eğer varsa, ana sayfaya yönlendirme callback'ini çağır
             if (onLoginSuccess) {
                 onLoginSuccess(user);
             }
-
-            // Formu temizle
+            
             setEmail('');
             setPassword('');
             
         } catch (err) {
-            // Hata yakalama
             let errorMessage = "Login failed. Please check your email and password.";
             
             if (err.code === 'auth/invalid-credential') {
@@ -43,7 +36,7 @@ const Login = ({ onLoginSuccess, onNavigate }) => { // onNavigate prop'u eklendi
             
             setError(errorMessage);
         } finally {
-            setIsLoading(false); // Yüklenmeyi durdur
+            setIsLoading(false); 
         }
     };
 
@@ -55,7 +48,7 @@ const Login = ({ onLoginSuccess, onNavigate }) => { // onNavigate prop'u eklendi
                     Sign in to access your schedule and find matches.
                 </p>
 
-                {/* Hata Mesajı Alanı */}
+                {/* Error Message Area */}
                 {error && (
                     <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg flex items-center mb-4" role="alert">
                         <AlertTriangle className="w-5 h-5 mr-3 flex-shrink-0" />
@@ -65,7 +58,7 @@ const Login = ({ onLoginSuccess, onNavigate }) => { // onNavigate prop'u eklendi
 
                 <form onSubmit={handleSubmit} className="space-y-4"> 
                     
-                    {/* Email Alanı */}
+                    {/* Email Field */}
                     <div>
                         <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
                         <input
@@ -79,7 +72,7 @@ const Login = ({ onLoginSuccess, onNavigate }) => { // onNavigate prop'u eklendi
                         />
                     </div>
                     
-                    {/* Parola Alanı */}
+                    {/* Password Field */}
                     <div>
                         <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
                         <input

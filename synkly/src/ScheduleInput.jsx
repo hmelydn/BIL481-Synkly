@@ -2,24 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { saveSchedule, getSchedule } from './scheduleService';
 import { Plus, Trash2, Save, Calendar, Clock, BookOpen, AlertTriangle } from 'lucide-react';
 
-const DAYS = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+// Days used in the database and matching logic
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']; 
 const TIMES = Array.from({ length: 25 }, (_, i) => 
     `${i < 10 ? '0' : ''}${i}:00`
 );
 
-// Program Giriş Bileşeni
+// Schedule Input Component
 const ScheduleInput = ({ userId }) => {
-    const [schedule, setSchedule] = useState([]); // Kaydedilmiş program slotları
+    const [schedule, setSchedule] = useState([]); 
     const [newSlot, setNewSlot] = useState({
-        day: DAYS[0],
-        startTime: TIMES[8], // Varsayılan 08:00
-        endTime: TIMES[9],   // Varsayılan 09:00
+        day: DAYS[0], 
+        startTime: TIMES[8], 
+        endTime: TIMES[9],   
         courseId: ''
     });
-    const [message, setMessage] = useState(''); // Başarı/Hata mesajı
+    const [message, setMessage] = useState(''); // Success/Error message state
     const [isLoading, setIsLoading] = useState(false);
 
-    // Bileşen yüklendiğinde mevcut programı çekme
+    // Fetch existing schedule when component mounts
     useEffect(() => {
         const fetchExistingSchedule = async () => {
             if (!userId) return;
@@ -27,45 +28,42 @@ const ScheduleInput = ({ userId }) => {
                 const existingSchedule = await getSchedule(userId);
                 setSchedule(existingSchedule);
             } catch (error) {
-                setMessage({ type: 'error', text: 'Mevcut program çekilemedi.' });
+                setMessage({ type: 'error', text: 'Could not fetch existing schedule.' });
             }
         };
         fetchExistingSchedule();
     }, [userId]);
 
-    // Yeni slot ekleme işlemi
+    // Add new slot to list
     const handleAddSlot = (e) => {
         e.preventDefault();
         
-        // Basit kontrol: Başlangıç saati bitiş saatinden önce olmalı
         if (newSlot.startTime >= newSlot.endTime) {
-            setMessage({ type: 'error', text: 'Başlangıç saati, bitiş saatinden önce olmalıdır.' });
+            setMessage({ type: 'error', text: 'Start time must be before end time.' });
             return;
         }
 
-        // Yeni slotu mevcut programa ekle
         setSchedule([...schedule, { ...newSlot, id: Date.now() }]); 
         
-        // Giriş alanlarını temizle
         setNewSlot({
             day: DAYS[0],
             startTime: TIMES[8],
             endTime: TIMES[9],
             courseId: ''
         });
-        setMessage({ type: 'success', text: 'Yeni ders saati eklendi. Kaydetmeyi unutmayın!' });
+        setMessage({ type: 'success', text: 'New slot added. Don\'t forget to save!' });
     };
 
-    // Slotu listeden çıkarma
+    // Remove slot from list
     const handleRemoveSlot = (idToRemove) => {
         setSchedule(schedule.filter(slot => slot.id !== idToRemove));
-        setMessage({ type: 'info', text: 'Ders silindi. Kaydetmeyi unutmayın!' });
+        setMessage({ type: 'info', text: 'Slot removed. Remember to save!' });
     };
 
-    // Programı Firestore'a kaydetme
+    // Save schedule to Firestore
     const handleSaveSchedule = async () => {
         if (!userId) {
-            setMessage({ type: 'error', text: 'Kullanıcı oturumu bulunamadı. Lütfen tekrar giriş yapın.' });
+            setMessage({ type: 'error', text: 'User session not found. Please log in again.' });
             return;
         }
         setIsLoading(true);
@@ -73,15 +71,14 @@ const ScheduleInput = ({ userId }) => {
 
         try {
             await saveSchedule(userId, schedule);
-            setMessage({ type: 'success', text: 'Ders programı başarıyla kaydedildi!' });
+            setMessage({ type: 'success', text: 'Schedule successfully saved!' });
         } catch (error) {
-            setMessage({ type: 'error', text: error.message || 'Program kaydı sırasında bir hata oluştu.' });
+            setMessage({ type: 'error', text: error.message || 'An error occurred during saving.' });
         } finally {
             setIsLoading(false);
         }
     };
 
-    // Stil fonksiyonları
     const getMessageStyle = (type) => {
         switch (type) {
             case 'success': return 'bg-green-100 text-green-800 border-green-400';
@@ -94,13 +91,13 @@ const ScheduleInput = ({ userId }) => {
     return (
         <div className="max-w-4xl mx-auto p-6 bg-white shadow-2xl rounded-xl my-8">
             <h2 className="text-3xl font-extrabold text-gray-900 mb-6 flex items-center">
-                <Calendar className="w-8 h-8 mr-3 text-blue-600"/> Haftalık Ders Programı Girişi
+                <Calendar className="w-8 h-8 mr-3 text-blue-600"/> Weekly Schedule Input
             </h2>
             <p className="text-gray-600 mb-6">
-                Lütfen haftalık ders saatlerinizi girin. Bu saatler, ortak boş zamanları bulmak için kullanılacaktır.
+                Please enter your weekly class hours. These times will be used to find common free slots.
             </p>
 
-            {/* Mesaj Alanı */}
+            {/* Message Area */}
             {message.text && (
                 <div className={`p-3 mb-4 rounded-lg border flex items-center ${getMessageStyle(message.type)}`}>
                     <AlertTriangle className="w-5 h-5 mr-2 flex-shrink-0" />
@@ -108,23 +105,23 @@ const ScheduleInput = ({ userId }) => {
                 </div>
             )}
             
-            {/* Yeni Slot Ekleme Formu */}
+            {/* New Slot Addition Form */}
             <form onSubmit={handleAddSlot} className="grid grid-cols-1 md:grid-cols-5 gap-4 p-4 border rounded-lg bg-gray-50 mb-6">
-                {/* Gün Seçimi */}
+                {/* Day Selection */}
                 <div className="md:col-span-1">
-                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center"><Calendar className="w-4 h-4 mr-1"/> Gün</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center"><Calendar className="w-4 h-4 mr-1"/> Day</label>
                     <select
                         value={newSlot.day}
                         onChange={(e) => setNewSlot({ ...newSlot, day: e.target.value })}
                         className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                     >
-                        {DAYS.map(day => <option key={day} value={day}>{day}</option>)}
+                        {DAYS.map(day => <option key={day} value={day}>{day}</option>)} 
                     </select>
                 </div>
                 
-                {/* Başlangıç Saati */}
+                {/* Start Time */}
                 <div className="md:col-span-1">
-                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center"><Clock className="w-4 h-4 mr-1"/> Başlangıç</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center"><Clock className="w-4 h-4 mr-1"/> Start Time</label>
                     <select
                         value={newSlot.startTime}
                         onChange={(e) => setNewSlot({ ...newSlot, startTime: e.target.value })}
@@ -134,9 +131,9 @@ const ScheduleInput = ({ userId }) => {
                     </select>
                 </div>
 
-                {/* Bitiş Saati */}
+                {/* End Time */}
                 <div className="md:col-span-1">
-                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center"><Clock className="w-4 h-4 mr-1"/> Bitiş</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center"><Clock className="w-4 h-4 mr-1"/> End Time</label>
                     <select
                         value={newSlot.endTime}
                         onChange={(e) => setNewSlot({ ...newSlot, endTime: e.target.value })}
@@ -146,34 +143,34 @@ const ScheduleInput = ({ userId }) => {
                     </select>
                 </div>
 
-                {/* Ders Adı */}
+                {/* Course Name */}
                 <div className="md:col-span-1">
-                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center"><BookOpen className="w-4 h-4 mr-1"/> Ders Adı (Ops.)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center"><BookOpen className="w-4 h-4 mr-1"/> Course Name (Opt.)</label>
                     <input
                         type="text"
                         value={newSlot.courseId}
                         onChange={(e) => setNewSlot({ ...newSlot, courseId: e.target.value })}
-                        placeholder="Örn: BIL 481"
+                        placeholder="E.g., CS 481"
                         className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                     />
                 </div>
                 
-                {/* Ekle Butonu */}
+                {/* Add Button */}
                 <div className="md:col-span-1 flex items-end">
                     <button
                         type="submit"
                         className="w-full h-10 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md shadow-md transition duration-150 disabled:opacity-50"
                     >
-                        <Plus className="w-5 h-5 mr-1" /> Ekle
+                        <Plus className="w-5 h-5 mr-1" /> Add
                     </button>
                 </div>
             </form>
 
-            {/* Program Listesi */}
+            {/* Schedule List */}
             <div className="mb-6">
-                <h3 className="text-xl font-semibold text-gray-800 mb-3">Kaydedilecek Program (Toplam: {schedule.length})</h3>
+                <h3 className="text-xl font-semibold text-gray-800 mb-3">Schedule to be Saved (Total: {schedule.length})</h3>
                 {schedule.length === 0 ? (
-                    <p className="text-gray-500 italic p-4 border rounded-lg bg-gray-50">Henüz ders saati eklemediniz.</p>
+                    <p className="text-gray-500 italic p-4 border rounded-lg bg-gray-50">No class slots added yet.</p>
                 ) : (
                     <div className="space-y-2 max-h-60 overflow-y-auto">
                         {schedule.map((slot, index) => (
@@ -182,16 +179,16 @@ const ScheduleInput = ({ userId }) => {
                                 className="flex justify-between items-center p-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50"
                             >
                                 <div className="text-sm font-medium text-gray-700 flex-1">
-                                    <span className="font-bold text-blue-600 mr-2">{slot.day}</span>
+                                    <span className="font-bold text-blue-600 mr-2">{slot.day}</span> 
                                     {slot.startTime} - {slot.endTime}
                                 </div>
                                 <div className="text-sm text-gray-500 w-32 truncate">
-                                    {slot.courseId || 'Ders Adı Yok'}
+                                    {slot.courseId || 'No Course Name'}
                                 </div>
                                 <button
                                     onClick={() => handleRemoveSlot(slot.id || index)}
                                     className="text-red-500 hover:text-red-700 p-1 rounded-full transition duration-150"
-                                    title="Dersi Sil"
+                                    title="Delete Slot"
                                 >
                                     <Trash2 className="w-5 h-5" />
                                 </button>
@@ -201,14 +198,14 @@ const ScheduleInput = ({ userId }) => {
                 )}
             </div>
 
-            {/* Kaydet Butonu */}
+            {/* Save Button */}
             <div className="mt-6 border-t pt-4">
                 <button
                     onClick={handleSaveSchedule}
                     disabled={isLoading || schedule.length === 0}
                     className="w-full flex items-center justify-center bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition duration-150 disabled:opacity-50"
                 >
-                    {isLoading ? 'Kaydediliyor...' : <><Save className="w-5 h-5 mr-2" /> Programı Kaydet</>}
+                    {isLoading ? 'Saving...' : <><Save className="w-5 h-5 mr-2" /> Save Schedule</>}
                 </button>
             </div>
         </div>
