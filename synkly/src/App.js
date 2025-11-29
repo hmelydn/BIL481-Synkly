@@ -4,8 +4,8 @@ import { app } from './firebaseConfig';
 import Login from './Login';
 import Signup from './Signup';
 import ScheduleInput from './ScheduleInput'; 
-import { getAllSchedules, findFreeSlots } from './matchingService'; 
-import { Loader2 } from 'lucide-react'; 
+import { getAllSchedules, findAvailableFriends } from './matchingService'; 
+import { Loader2, Users } from 'lucide-react'; 
 
 // -----------------------------------------------------
 // Main Application Component (Routing and Auth State Management)
@@ -14,8 +14,9 @@ const App = () => {
     const [currentScreen, setCurrentScreen] = useState('login'); 
     const [user, setUser] = useState(null);
     const [isAuthReady, setIsAuthReady] = useState(false);
-    const [commonSlots, setCommonSlots] = useState([]); 
+    const [matchingResults, setMatchingResults] = useState([]); 
     const [isMatchingLoading, setIsMatchingLoading] = useState(false); 
+    const [totalSchedulesCount, setTotalSchedulesCount] = useState(0); // DEBUG STATE
 
 
     // Listen to Firebase Auth State
@@ -31,7 +32,7 @@ const App = () => {
         return () => unsubscribe();
     }, []);
 
-    // Matching Logic: Fetch Schedules and Find Free Slots
+    // Matching Logic: Fetch Schedules and Find Friends
     useEffect(() => {
         const runMatching = async () => {
             if (!user) return;
@@ -40,19 +41,26 @@ const App = () => {
             console.log("Matching process starting...");
             
             try {
-                const schedules = await getAllSchedules();
+                const schedules = await getAllSchedules(); 
                 
-                if (schedules.length > 0) {
-                    const result = findFreeSlots(schedules);
-                    setCommonSlots(result); 
-                    console.log(`Common Free Slots found: ${result.length} items`);
+                // ✅ KRİTİK DEBUG: Çekilen veri setini konsola yazdır
+                console.log("DEBUG: Fetched Schedules Array:", schedules); 
+                
+                // Debug bilgisini state'e kaydet (ekranda görmek için)
+                setTotalSchedulesCount(schedules.length);
+                
+                if (schedules.length <= 1) { 
+                     setMatchingResults([]);
+                     console.log("Not enough schedules found for matching (Needs more than 1 user). Found:", schedules.length);
                 } else {
-                     setCommonSlots([]);
-                     console.log("No schedule data found for matching.");
+                    const results = findAvailableFriends(user.uid, schedules);
+                    setMatchingResults(results); 
+                    console.log(`Matched ${results.length} available slots.`);
                 }
             } catch (error) {
-                console.error("Critical error during matching:", error);
-                setCommonSlots([]);
+                // Hatanın kendisini yakala ve konsola yazdır (Bu, PERMISSION DENIED hatasını görmemizi sağlayabilir)
+                console.error("CRITICAL ERROR DURING DATA FETCH:", error);
+                setMatchingResults([]);
             } finally {
                 setIsMatchingLoading(false); 
             }
@@ -116,34 +124,40 @@ const App = () => {
                 {/* Main Content: Schedule Input */}
                 <ScheduleInput userId={user.uid} /> 
                 
-                {/* MATCHING RESULTS */}
-                <div className="w-full max-w-4xl mt-6 p-6 bg-white rounded-xl shadow-2xl border border-dashed border-green-300">
-                    <h2 className="text-3xl font-extrabold mb-4 flex items-center text-green-700">
-                        <span className="mr-3">🤝</span> Common Free Slots
+                {/* MATCHING RESULTS (AVAILABILITY) */}
+                <div className="w-full max-w-4xl mt-6 p-6 bg-white rounded-xl shadow-2xl border border-dashed border-blue-300">
+                    <h2 className="text-3xl font-extrabold mb-4 flex items-center text-blue-700">
+                        <span className="mr-3">🕒</span> Your Available Slots & Friends
                     </h2>
                     <p className="text-gray-600 mb-4 border-b pb-4">
-                        Common time slots when all registered users (you and dummy friends) are available.
+                        Time slots when **you are free** and at least one other friend is available to meet.
                     </p>
 
                     {isMatchingLoading ? (
                         <div className="flex items-center justify-center h-24 text-blue-500">
                             <Loader2 className="w-6 h-6 mr-2 animate-spin" />
-                            Analyzing Schedules...
+                            Analyzing Friend Schedules...
                         </div>
-                    ) : commonSlots.length === 0 ? (
+                    ) : matchingResults.length === 0 ? (
                         <div className="bg-yellow-50 border border-yellow-300 text-yellow-800 p-4 rounded-lg text-center">
-                            <p className="font-semibold">No common free time slots found.</p>
-                            <p className="text-sm mt-1">This might be because everyone has classes or not enough schedules are saved.</p>
+                            <p className="font-semibold">No available slots found with others.</p>
+                            <p className="text-sm mt-1">Please ensure your schedule is saved and data is loaded. (Total Schedules Found: {totalSchedulesCount})</p> 
                         </div>
                     ) : (
-                        <div className="space-y-2 max-h-80 overflow-y-auto">
-                            {commonSlots.map((slot, index) => (
+                        <div className="space-y-3 max-h-80 overflow-y-auto">
+                            {matchingResults.map((slot, index) => (
                                 <div 
                                     key={index} 
-                                    className="flex justify-between items-center p-3 bg-green-50 border border-green-300 rounded-lg hover:bg-green-100 transition duration-150"
+                                    className="flex justify-between items-center p-3 bg-blue-50 border border-blue-300 rounded-lg hover:bg-blue-100 transition duration-150"
                                 >
-                                    <span className="font-bold text-gray-800 w-24">{slot.day}</span>
-                                    <span className="text-green-700 font-extrabold text-lg">{slot.startTime} - {slot.endTime}</span>
+                                    <div className="font-bold text-gray-800 w-24">{slot.day}</div>
+                                    <div className="text-blue-700 font-extrabold text-lg flex-1">
+                                        {slot.startTime} - {slot.endTime}
+                                    </div>
+                                    <div className="flex items-center text-sm text-gray-600">
+                                        <Users className="w-4 h-4 mr-1 text-green-600" />
+                                        {slot.availableCount} Friends Available
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -152,9 +166,9 @@ const App = () => {
                 
                 {/* Information Footer */}
                 <div className="w-full max-w-4xl mt-6 p-6 bg-white rounded-lg shadow-lg">
-                    <h2 className="text-2xl font-semibold mb-3 text-blue-800">Next Steps: Finding Matches</h2>
+                    <h2 className="text-2xl font-semibold mb-3 text-blue-800">Note on Matching</h2>
                     <p className="text-gray-600">
-                        The results above will update after you save your own schedule. Enter your classes to start finding common free times!
+                        The results above show times when you are free, and others are free. The ultimate goal is for users to click a time slot to indicate they are "free for lunch" at that moment.
                     </p>
                 </div>
 

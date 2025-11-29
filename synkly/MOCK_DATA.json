@@ -1,50 +1,142 @@
-[{"userId":"af3831d3-7622-415b-ae85-8623a8b8c774","day":"Saturday","startTime":"13:48","endTime":"8:50"},
-{"userId":"26b29efb-ef06-404c-8c1d-9bdafcb67104","day":"Monday","startTime":"17:33","endTime":"17:10"},
-{"userId":"d08a7b2c-bb4d-4615-a260-602ba69212df","day":"Friday","startTime":"15:20","endTime":"10:01"},
-{"userId":"d72ba9bf-55ce-4cfa-bb85-8b256ba52381","day":"Friday","startTime":"9:37","endTime":"18:18"},
-{"userId":"88cb2097-dfa0-4e99-8a26-7bb49967ae09","day":"Wednesday","startTime":"12:15","endTime":"13:38"},
-{"userId":"210e1a9a-0d8f-4016-9076-d26672ac95e1","day":"Wednesday","startTime":"18:28","endTime":"15:41"},
-{"userId":"a7cf48ba-85ad-413c-8cc7-2d398b7a0d68","day":"Friday","startTime":"11:34","endTime":"16:19"},
-{"userId":"c6552c05-05f5-4d36-b0f8-fa82fccb7418","day":"Thursday","startTime":"9:11","endTime":"11:25"},
-{"userId":"52cf9545-ae82-4204-a797-2372cbb34e51","day":"Monday","startTime":"16:31","endTime":"8:46"},
-{"userId":"6f55d5ab-f425-49fe-bf16-7e63beb4039f","day":"Monday","startTime":"11:01","endTime":"11:59"},
-{"userId":"5d16e51e-327d-46d7-9146-f318d0fa9dcb","day":"Tuesday","startTime":"15:59","endTime":"12:48"},
-{"userId":"979cd0fd-685c-46e0-a43c-bdacc783fa6a","day":"Thursday","startTime":"12:37","endTime":"16:24"},
-{"userId":"770ea35b-0752-45b4-9c65-5fe6af9fbf1e","day":"Monday","startTime":"16:20","endTime":"10:19"},
-{"userId":"6ce5c8ce-0315-4913-83a4-1b4cc1ee1832","day":"Saturday","startTime":"16:28","endTime":"10:11"},
-{"userId":"0a8702e3-7ff5-4a7c-a9ce-5b6f142f0cc1","day":"Monday","startTime":"16:08","endTime":"13:36"},
-{"userId":"ee008e38-6782-4d9d-a753-1e94983b7cd8","day":"Saturday","startTime":"15:56","endTime":"16:52"},
-{"userId":"d7022c1f-a0c7-4484-822c-d6e03c94f358","day":"Wednesday","startTime":"12:41","endTime":"17:36"},
-{"userId":"9d580251-9937-4531-9c41-e82d71a71a86","day":"Monday","startTime":"14:55","endTime":"18:15"},
-{"userId":"d5bc3677-ed2b-4bdd-91b3-7a20be7b688f","day":"Wednesday","startTime":"17:32","endTime":"11:56"},
-{"userId":"bfc764f8-3864-40d9-bc29-228612c5757f","day":"Thursday","startTime":"18:16","endTime":"14:38"},
-{"userId":"3efb71cc-4ef7-4779-9130-2806b50068e9","day":"Wednesday","startTime":"18:09","endTime":"9:59"},
-{"userId":"239e3988-bceb-4899-a5f2-4f1113023ad0","day":"Tuesday","startTime":"17:08","endTime":"17:59"},
-{"userId":"be1e6587-4408-47e3-b7cd-7f31b7b36c6f","day":"Friday","startTime":"16:43","endTime":"12:12"},
-{"userId":"85900dca-3a8c-4d03-9000-73e563817c06","day":"Friday","startTime":"16:56","endTime":"15:34"},
-{"userId":"009495ac-9915-4a3e-b062-56bf0af84b32","day":"Friday","startTime":"16:30","endTime":"9:00"},
-{"userId":"9fd86698-4a86-4aa8-9e93-48032efc2a8b","day":"Wednesday","startTime":"10:41","endTime":"8:45"},
-{"userId":"d9e3e573-2612-4518-bd3c-fe3eee3b7adb","day":"Saturday","startTime":"8:57","endTime":"12:12"},
-{"userId":"c3b57031-b945-4422-9fda-e8b16dbe7363","day":"Saturday","startTime":"9:55","endTime":"16:20"},
-{"userId":"9bee0b79-0327-4544-92cd-12ebc5d0208c","day":"Saturday","startTime":"14:01","endTime":"15:34"},
-{"userId":"4d9c7434-826c-4bda-9d98-00979a15f07b","day":"Tuesday","startTime":"11:05","endTime":"12:36"},
-{"userId":"b2715918-af79-4284-8970-065f1823f857","day":"Wednesday","startTime":"14:18","endTime":"8:49"},
-{"userId":"d35cf49c-d554-4f22-ae72-760c7f92f769","day":"Monday","startTime":"16:12","endTime":"10:55"},
-{"userId":"701acdfc-522b-4c7f-8903-26e7157a4ebd","day":"Monday","startTime":"10:06","endTime":"11:27"},
-{"userId":"e3fed794-93a7-4209-9dc9-201d642a3df2","day":"Saturday","startTime":"10:18","endTime":"17:31"},
-{"userId":"4a05b762-295e-4f53-b48f-fc623555f5f2","day":"Friday","startTime":"11:04","endTime":"15:06"},
-{"userId":"f9326c56-6509-42c5-ba4e-fa4983c0ce69","day":"Tuesday","startTime":"16:30","endTime":"16:25"},
-{"userId":"2310a74b-668c-4c71-ba0a-38bfe22e2007","day":"Wednesday","startTime":"13:39","endTime":"13:37"},
-{"userId":"812a0bac-7bc0-4f83-91c8-07570720dcb9","day":"Friday","startTime":"9:39","endTime":"8:43"},
-{"userId":"7ef21b12-0d2b-4f2c-b5ec-96d51bf34949","day":"Monday","startTime":"12:05","endTime":"13:45"},
-{"userId":"140c9374-2e4c-4724-a07e-1f0977af274a","day":"Tuesday","startTime":"14:22","endTime":"8:33"},
-{"userId":"992d6e65-45a0-4a7b-b195-9aa5ca8040c7","day":"Wednesday","startTime":"13:35","endTime":"16:08"},
-{"userId":"da4fe3a9-623f-4a9f-8df3-0c5a280defba","day":"Saturday","startTime":"10:06","endTime":"13:38"},
-{"userId":"23136f7c-6fca-4ee8-96aa-62631c764c8a","day":"Tuesday","startTime":"13:00","endTime":"11:55"},
-{"userId":"404bad1e-0fdb-43dc-a92a-77db9f7f6be4","day":"Monday","startTime":"14:29","endTime":"15:31"},
-{"userId":"d5e5f080-c263-4db0-9a30-c35f52b2d156","day":"Saturday","startTime":"13:36","endTime":"17:03"},
-{"userId":"0dd9afc9-8655-42bc-a530-8f4d0fc561f9","day":"Wednesday","startTime":"14:13","endTime":"14:12"},
-{"userId":"f0a5d9bf-15f1-4fcb-a612-0a1ac2a7f2eb","day":"Monday","startTime":"10:01","endTime":"15:32"},
-{"userId":"d6aa03ca-f1e6-4df8-9eb6-230ae53684dc","day":"Friday","startTime":"9:51","endTime":"8:53"},
-{"userId":"f59b052f-f3a4-48b8-9abe-808dae454f36","day":"Wednesday","startTime":"14:00","endTime":"16:30"},
-{"userId":"14dbc459-95ea-4185-9ab3-1387580ba21d","day":"Saturday","startTime":"11:21","endTime":"13:10"}]
+[
+  {
+    "userId": "DUMMY_USER_1_ENG",
+    "day": "Monday",
+    "startTime": "09:00",
+    "endTime": "11:30",
+    "courseName": "CS 481 - Data Mining"
+  },
+  {
+    "userId": "DUMMY_USER_1_ENG",
+    "day": "Wednesday",
+    "startTime": "13:30",
+    "endTime": "16:00",
+    "courseName": "MAT 301 - Calculus III"
+  },
+  {
+    "userId": "DUMMY_USER_2_ENG",
+    "day": "Tuesday",
+    "startTime": "10:30",
+    "endTime": "12:00",
+    "courseName": "BIL 202 - Algorithms"
+  },
+  {
+    "userId": "DUMMY_USER_2_ENG",
+    "day": "Thursday",
+    "startTime": "15:00",
+    "endTime": "17:30",
+    "courseName": "ENG 101 - Academic Writing"
+  },
+  {
+    "userId": "DUMMY_USER_3_ENG",
+    "day": "Friday",
+    "startTime": "11:00",
+    "endTime": "13:00",
+    "courseName": "CS 481 - Data Mining"
+  },
+  {
+    "userId": "DUMMY_USER_3_ENG",
+    "day": "Monday",
+    "startTime": "14:30",
+    "endTime": "16:00",
+    "courseName": "PHY 201 - Mechanics"
+  },
+  {
+    "userId": "DUMMY_USER_4_ENG",
+    "day": "Tuesday",
+    "startTime": "14:00",
+    "endTime": "16:30",
+    "courseName": "CS 481 - Data Mining"
+  },
+  {
+    "userId": "DUMMY_USER_4_ENG",
+    "day": "Wednesday",
+    "startTime": "09:00",
+    "endTime": "11:00",
+    "courseName": "TUR 101 - Literature"
+  },
+  {
+    "userId": "DUMMY_USER_5_ENG",
+    "day": "Thursday",
+    "startTime": "10:00",
+    "endTime": "12:30",
+    "courseName": "MATH 404 - Topology"
+  },
+  {
+    "userId": "DUMMY_USER_5_ENG",
+    "day": "Friday",
+    "startTime": "14:00",
+    "endTime": "16:00",
+    "courseName": "CS 481 - Data Mining"
+  },
+  {
+    "userId": "DUMMY_USER_6_ENG",
+    "day": "Monday",
+    "startTime": "10:00",
+    "endTime": "12:30",
+    "courseName": "CS 305 - Databases"
+  },
+  {
+    "userId": "DUMMY_USER_6_ENG",
+    "day": "Tuesday",
+    "startTime": "14:30",
+    "endTime": "17:00",
+    "courseName": "MATH 404 - Topology"
+  },
+  {
+    "userId": "DUMMY_USER_7_ENG",
+    "day": "Wednesday",
+    "startTime": "11:00",
+    "endTime": "13:30",
+    "courseName": "CS 481 - Data Mining"
+  },
+  {
+    "userId": "DUMMY_USER_7_ENG",
+    "day": "Thursday",
+    "startTime": "16:30",
+    "endTime": "18:00",
+    "courseName": "PHY 201 - Mechanics"
+  },
+  {
+    "userId": "DUMMY_USER_8_ENG",
+    "day": "Friday",
+    "startTime": "13:00",
+    "endTime": "14:30",
+    "courseName": "ENG 101 - Academic Writing"
+  },
+  {
+    "userId": "DUMMY_USER_8_ENG",
+    "day": "Monday",
+    "startTime": "17:00",
+    "endTime": "18:30",
+    "courseName": "TUR 101 - Literature"
+  },
+  {
+    "userId": "DUMMY_USER_9_ENG",
+    "day": "Tuesday",
+    "startTime": "09:30",
+    "endTime": "11:00",
+    "courseName": "CS 305 - Databases"
+  },
+  {
+    "userId": "DUMMY_USER_9_ENG",
+    "day": "Wednesday",
+    "startTime": "16:00",
+    "endTime": "17:30",
+    "courseName": "MAT 301 - Calculus III"
+  },
+  {
+    "userId": "DUMMY_USER_10_ENG",
+    "day": "Thursday",
+    "startTime": "11:30",
+    "endTime": "14:00",
+    "courseName": "CS 481 - Data Mining"
+  },
+  {
+    "userId": "DUMMY_USER_10_ENG",
+    "day": "Friday",
+    "startTime": "09:00",
+    "endTime": "10:30",
+    "courseName": "Algorithms Lab"
+  }
+]

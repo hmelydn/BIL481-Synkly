@@ -2,22 +2,38 @@ import React, { useState, useEffect } from 'react';
 import { saveSchedule, getSchedule } from './scheduleService';
 import { Plus, Trash2, Save, Calendar, Clock, BookOpen, AlertTriangle } from 'lucide-react';
 
-// Days used in the database and matching logic
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']; 
-const TIMES = Array.from({ length: 25 }, (_, i) => 
-    `${i < 10 ? '0' : ''}${i}:00`
-);
+
+// -----------------------------------------------------------------
+// SAAT DİLİMLERİ: 08:00'dan 19:00'a kadar tüm aralıkları oluşturur.
+// Bu, 08:30 başlangıç ve 18:30 bitiş seçeneklerini kapsar.
+// -----------------------------------------------------------------
+const START_HOUR = 8; // Dizi oluşturmak için 08:00'dan başlar
+const END_HOUR = 19; // Dizi oluşturmak için 19:00'da biter
+
+const TIMES = Array.from({ length: (END_HOUR * 2) - (START_HOUR * 2) + 1 }, (_, i) => {
+    const totalMinutes = (START_HOUR * 60) + (i * 30);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+});
+
+// "08:30" TIMES[1]
+// "09:00" TIMES[2]
+// "18:00" TIMES[20]
+// "18:30" TIMES[21]
+
 
 // Schedule Input Component
 const ScheduleInput = ({ userId }) => {
     const [schedule, setSchedule] = useState([]); 
     const [newSlot, setNewSlot] = useState({
         day: DAYS[0], 
-        startTime: TIMES[8], 
-        endTime: TIMES[9],   
+        startTime: TIMES[1], // Varsayılan 08:30
+        endTime: TIMES[5],   // Varsayılan 10:30
         courseId: ''
     });
-    const [message, setMessage] = useState(''); // Success/Error message state
+    const [message, setMessage] = useState(''); 
     const [isLoading, setIsLoading] = useState(false);
 
     // Fetch existing schedule when component mounts
@@ -47,8 +63,8 @@ const ScheduleInput = ({ userId }) => {
         
         setNewSlot({
             day: DAYS[0],
-            startTime: TIMES[8],
-            endTime: TIMES[9],
+            startTime: TIMES[1], // Reset to 08:30
+            endTime: TIMES[5],   // Reset to 10:30
             courseId: ''
         });
         setMessage({ type: 'success', text: 'New slot added. Don\'t forget to save!' });
@@ -125,9 +141,10 @@ const ScheduleInput = ({ userId }) => {
                     <select
                         value={newSlot.startTime}
                         onChange={(e) => setNewSlot({ ...newSlot, startTime: e.target.value })}
-                        className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     >
-                        {TIMES.slice(0, 24).map(time => <option key={`start-${time}`} value={time}>{time}</option>)}
+                        {/* ✅ KRİTİK GÜNCELLEME: 08:30'dan başlar (index 1) ve 18:00'da biter (index 20) */}
+                        {TIMES.slice(1, TIMES.length - 2).map(time => <option key={`start-${time}`} value={time}>{time}</option>)}
                     </select>
                 </div>
 
@@ -139,7 +156,8 @@ const ScheduleInput = ({ userId }) => {
                         onChange={(e) => setNewSlot({ ...newSlot, endTime: e.target.value })}
                         className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                     >
-                        {TIMES.slice(1).map(time => <option key={`end-${time}`} value={time}>{time}</option>)}
+                        {/* ✅ KRİTİK GÜNCELLEME: 09:00'dan başlar (index 2) ve 18:30'da biter (index 21) */}
+                        {TIMES.slice(2, TIMES.length - 1).map(time => <option key={`end-${time}`} value={time}>{time}</option>)}
                     </select>
                 </div>
 
@@ -151,7 +169,7 @@ const ScheduleInput = ({ userId }) => {
                         value={newSlot.courseId}
                         onChange={(e) => setNewSlot({ ...newSlot, courseId: e.target.value })}
                         placeholder="E.g., CS 481"
-                        className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     />
                 </div>
                 

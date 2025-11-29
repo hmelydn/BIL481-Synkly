@@ -1,27 +1,33 @@
-import { auth, db, getPrivateUserCollectionPath } from './firebaseConfig'; // 1. YENİ: getPrivateUserCollectionPath içe aktarılıyor
+// authService.js
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore"; 
+import { setDoc } from "firebase/firestore"; 
+import { auth, getUserProfileDocRef, getUserRootDocRef } from './firebaseConfig'; 
 
 // -----------------------------------------------------------
-// YARDIMCI FONKSİYON: Kullanıcı verilerini Firestore'a kaydeder
+// YARDIMCI FONKSİYON: Kullanıcı verilerini Firestore'a kaydeder (Kök Doküman Eklendi)
 // -----------------------------------------------------------
 const saveUserDataToFirestore = async (uid, name, email) => {
-    // ⚠️ DÜZELTME: Güvenlik kurallarına uygun özel kullanıcı yolu oluşturuluyor.
-    const userDocRef = doc(db, getPrivateUserCollectionPath(uid, "profile"), "user-details");
     
-    try {
-        await setDoc(userDocRef, {
-            uid: uid,
-            name: name, // Kayıt sırasında aldığımız username buraya name olarak kaydedilecek
-            email: email,
-            schedule: [], // İlk giriş için boş program listesi
-            optIn: false, // Gizlilik gereksinimi
-        });
-        console.log("User data successfully saved to Firestore.");
-    } catch (error) {
-        console.error("Error writing user data to Firestore:", error);
-        throw error;
-    }
+    // 1. KRİTİK ADIM: Kök Dokümanı Oluştur (getAllSchedules'ın 0 dönmesini engeller)
+    const rootDocRef = getUserRootDocRef(uid);
+    await setDoc(rootDocRef, { 
+        uid: uid,
+        createdAt: new Date().toISOString()
+    });
+    console.log("Root user document successfully created.");
+
+
+    // 2. Adım: Profil Detaylarını Oluşturma (Mevcut işlev)
+    const userProfileDocRef = getUserProfileDocRef(uid);
+    
+    await setDoc(userProfileDocRef, {
+        uid: uid,
+        name: name,
+        email: email,
+        schedule: [], 
+        optIn: false, 
+    });
+    console.log("User profile data successfully saved to Firestore.");
 };
 
 // -----------------------------------------------------------
@@ -29,21 +35,14 @@ const saveUserDataToFirestore = async (uid, name, email) => {
 // -----------------------------------------------------------
 export const handleSignup = async (email, password, username) => {
     try {
-        // 1. Firebase Auth ile hesap oluştur
-        const userCredential = await createUserWithEmailAndPassword(
-            auth, 
-            email, 
-            password
-        );
-        
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         
-        // 2. YENİ ADIM: Kullanıcı adını Firestore'a kaydet
+        // Hem kök dokümanı hem de profil detaylarını kaydet
         await saveUserDataToFirestore(user.uid, username, user.email); 
 
-        console.log("Sign-up successful, user:", user); 
+        console.log("Sign-up successful, user:", user.uid); 
         return user;
-
     } catch (error) {
         console.error("Sign-up error:", error.message); 
         throw error; 
@@ -55,16 +54,10 @@ export const handleSignup = async (email, password, username) => {
 // -----------------------------------------------------------
 export const handleLogin = async (email, password) => {
     try {
-        const userCredential = await signInWithEmailAndPassword(
-            auth, 
-            email, 
-            password
-        );
-        
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
-        console.log("Login successful, user:", user);
+        console.log("Login successful, user:", user.uid);
         return user;
-
     } catch (error) {
         console.error("Login error:", error.message); 
         throw error; 

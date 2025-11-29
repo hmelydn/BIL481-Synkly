@@ -1,102 +1,100 @@
-// src/matchingService.js
-// Uygulamanın Backend Eşleştirme Mantığı
+import { collection, getDocs, doc, getDoc } from "firebase/firestore";
+import { db } from "./firebaseConfig"; 
 
-import { db } from "./firebaseConfig";
-import { collection, getDocs } from "firebase/firestore";
-
-// Haftanın günleri için basit bir indeksleme yapalım (Pazartesi=0, Pazar=6)
 const DAYS_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+// ✅ Eşleştirme aralığı 08:30'da başlar ve 18:30'da biter.
+const MATCHING_START_TIME = '08:30'; 
+const MATCHING_END_TIME = '18:30';   
 
 // -------------------------------------------------------------
-// YARDIMCI FONKSİYONLAR
+// HELPER FUNCTIONS 
 // -------------------------------------------------------------
 
-/**
- * HH:MM formatındaki saati, günün başlangıcından itibaren geçen dakika sayısına çevirir.
- * Örn: 09:30 -> 570 dakika
- * @param {string} timeStr - HH:MM formatında saat stringi.
- * @returns {number} Günün başlangıcından itibaren geçen dakika sayısı.
- */
 const timeToMinutes = (timeStr) => {
-    // String'i al ve : ile bölerek sayıya çevir
     const [hours, minutes] = timeStr.split(':').map(Number);
     return hours * 60 + minutes;
 };
 
-/**
- * Dakika formatını HH:MM formatına çevirir.
- * Örn: 570 -> "09:30"
- * @param {number} totalMinutes
- * @returns {string} HH:MM formatında saat stringi.
- */
 const minutesToTime = (totalMinutes) => {
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
-    // Tek basamaklı sayıların başına sıfır ekler (Örn: 9 -> 09)
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 };
 
+// Eşleştirme döngüsünün başlangıç ve bitiş dakikalarını hesaplar
+const START_MINUTES = timeToMinutes(MATCHING_START_TIME); // 510 dakika (08:30)
+const END_MINUTES = timeToMinutes(MATCHING_END_TIME);     // 1110 dakika (18:30)
+// -------------------------------------------------------------
+
 
 // -------------------------------------------------------------
-// 1. VERİ ÇEKME (Firestore'dan)
+// 1. DATA FETCHING (Veri Çekme)
 // -------------------------------------------------------------
 
-/**
- * Veritabanındaki tüm kullanıcıların (yapay veri dahil) programlarını çeker.
- * @returns {Promise<Array<Object>>} Tüm kullanıcıların program verilerini içeren dizi.
- */
 export const getAllSchedules = async () => {
     try {
         const usersCollectionRef = collection(db, "users");
-        const usersSnapshot = await getDocs(usersCollectionRef);
+        const usersSnapshot = await getDocs(usersCollectionRef); 
 
         const allSchedules = [];
-
-        // Her kullanıcının altındaki 'schedule' alt koleksiyonuna giriyoruz.
+        
         for (const userDoc of usersSnapshot.docs) {
             const userId = userDoc.id;
             
-            // users/{userId}/schedule/current yolunu hedef alıyoruz.
-            const scheduleCollectionRef = collection(db, "users", userId, "schedule");
-            const scheduleSnapshot = await getDocs(scheduleCollectionRef);
+            const scheduleDocRef = doc(db, "users", userId, "schedule", "current");
+            const scheduleDoc = await getDoc(scheduleDocRef);
 
-            scheduleSnapshot.forEach((doc) => {
-                const scheduleData = doc.data();
+            if (scheduleDoc.exists()) {
+                const scheduleData = scheduleDoc.data();
                 
-                // Veriye kullanıcı ID'sini ekleyerek döndürüyoruz
                 allSchedules.push({
                     userId: userId,
-                    slots: scheduleData.slots || [], // Kaydettiğimiz ders slotları
+                    slots: scheduleData.slots || [], 
                 });
-            });
+            }
         }
 
-        console.log(`Veritabanından toplam ${allSchedules.length} program çekildi.`);
+        console.log(`Fetched total ${allSchedules.length} schedules from the database.`);
         return allSchedules;
         
     } catch (error) {
-        console.error("Tüm programlar çekilirken bir hata oluştu:", error);
+        console.error("CRITICAL ERROR in getAllSchedules:", error); 
         return []; 
     }
 };
 
 // -------------------------------------------------------------
-// 2. EŞLEŞTİRME MANTIĞI (Core Logic)
+// 2. MATCHING LOGIC (Eşleştirme Mantığı)
 // -------------------------------------------------------------
 
-/**
- * Tüm kullanıcı programlarını analiz ederek ortak boş zaman dilimlerini bulur.
- * 
- * @param {Array<Object>} allSchedules - Firestore'dan çekilen tüm programlar.
- * @returns {Array<Object>} Gün, Başlangıç ve Bitiş saati içeren ortak boş zaman slotları.
- */
-export const findFreeSlots = (allSchedules) => {
-    const busySlotCounts = new Map(); 
-    const totalUsers = allSchedules.length;
+export const findAvailableFriends = (currentUserId, allSchedules) => {
+    
+    const currentUserSchedule = allSchedules.find(s => s.userId === currentUserId) || {
+        userId: currentUserId,
+        slots: [] 
+    };
+    
+    const otherSchedules = allSchedules.filter(s => s.userId !== currentUserId);
 
-    // 1. DOLU ZAMANLARI İŞARETLEME
-    // Tüm dersleri yarım saatlik slotlara çevirip meşgul sayısını sayar.
-    allSchedules.forEach(schedule => {
+    // 1. Kullanıcının MEŞGUL olduğu slotları işaretler
+    const currentUserBusySlots = new Set();
+    currentUserSchedule.slots.forEach(slot => {
+        const dayIndex = DAYS_ORDER.indexOf(slot.day);
+        if (dayIndex === -1) return;
+
+        let startMinutes = timeToMinutes(slot.startTime);
+        let endMinutes = timeToMinutes(slot.endTime);
+
+        for (let currentMinutes = startMinutes; currentMinutes < endMinutes; currentMinutes += 30) {
+            currentUserBusySlots.add(`${dayIndex}_${currentMinutes}`);
+        }
+    });
+
+
+    // 2. Diğer kullanıcıların MEŞGUL olduğu slotların haritasını çıkarır
+    const userBusyMap = new Map(); 
+
+    otherSchedules.forEach(schedule => {
         schedule.slots.forEach(slot => {
             const dayIndex = DAYS_ORDER.indexOf(slot.day);
             if (dayIndex === -1) return; 
@@ -104,64 +102,86 @@ export const findFreeSlots = (allSchedules) => {
             let startMinutes = timeToMinutes(slot.startTime);
             let endMinutes = timeToMinutes(slot.endTime);
 
-            if (endMinutes <= startMinutes) return; 
-
-            // Yarım saatlik adımlarla ilerle (30 dakika = 1 slot)
             for (let currentMinutes = startMinutes; currentMinutes < endMinutes; currentMinutes += 30) {
-                // Slot ID'si: "GünIndex_SaatDakika" (Örn: 0_540 = Pazartesi 09:00)
                 const slotKey = `${dayIndex}_${currentMinutes}`;
-                
-                // Bu slotta meşgul olan kişi sayısını artır
-                busySlotCounts.set(slotKey, (busySlotCounts.get(slotKey) || 0) + 1);
+                if (!userBusyMap.has(slotKey)) {
+                    userBusyMap.set(slotKey, new Set());
+                }
+                userBusyMap.get(slotKey).add(schedule.userId); 
             }
         });
     });
 
-    // 2. ORTAK BOŞ ZAMANLARI BULMA
-    const freeSlots = [];
+    // 3. Eşleştirme yapılır (08:30 - 18:30 arası sınırlandı)
+    const availableSlots = [];
+    let currentAvailableSlot = null;
     
-    // Haftanın her günü için döngü (00:00'dan 23:30'a kadar)
     for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
-        let currentFreeSlot = null;
-        
-        for (let minutes = 0; minutes < 24 * 60; minutes += 30) {
+        // Döngü 08:30 (START_MINUTES) ile 18:30 (END_MINUTES) arasında çalışır
+        for (let minutes = START_MINUTES; minutes < END_MINUTES; minutes += 30) { 
+            
             const slotKey = `${dayIndex}_${minutes}`;
             
-            // Eğer o slotta meşgul olan kişi sayısı TOPLAM KULLANICI sayısından azsa, slot BOŞ demektir.
-            const isFree = (busySlotCounts.get(slotKey) || 0) < totalUsers;
-
-            if (isFree) {
-                if (currentFreeSlot) {
-                    // Mevcut boşluğu uzat
-                    currentFreeSlot.endMinutes = minutes + 30;
-                } else {
-                    // Yeni bir boş zaman dilimi başlat
-                    currentFreeSlot = { 
-                        day: DAYS_ORDER[dayIndex], 
-                        startMinutes: minutes, 
-                        endMinutes: minutes + 30 
+            // KONTROL 1: Sen müsait misin?
+            const isUserFree = !currentUserBusySlots.has(slotKey); 
+            
+            if (isUserFree) {
+                
+                const busyFriends = userBusyMap.get(slotKey) || new Set();
+                const availableFriendIds = Array.from(otherSchedules)
+                        .map(schedule => schedule.userId) 
+                        .filter(friendId => !busyFriends.has(friendId)); 
+                        
+                const availableFriendsCount = availableFriendIds.length;
+                
+                if (availableFriendsCount > 0) {
+                    
+                    const slotInfo = {
+                        day: DAYS_ORDER[dayIndex],
+                        startMinutes: minutes,
+                        endMinutes: minutes + 30,
+                        availableCount: availableFriendsCount,
+                        availableFriendsIds: availableFriendIds
                     };
+                    
+                    const friendsMatch = (currentAvailableSlot && currentAvailableSlot.availableFriendsIds.length === availableFriendIds.length && currentAvailableSlot.availableFriendsIds.every(id => availableFriendIds.includes(id)));
+
+                    if (currentAvailableSlot && currentAvailableSlot.day === slotInfo.day && friendsMatch) {
+                        currentAvailableSlot.endMinutes = minutes + 30;
+                    } else {
+                        if (currentAvailableSlot) {
+                            availableSlots.push(currentAvailableSlot);
+                        }
+                        currentAvailableSlot = slotInfo;
+                    }
+
+                } else {
+                    if (currentAvailableSlot) {
+                        availableSlots.push(currentAvailableSlot);
+                        currentAvailableSlot = null;
+                    }
                 }
             } else {
-                // SLOT DOLU (Birisi o saatte meşgul)
-                if (currentFreeSlot) {
-                    // Önceki boş zaman dilimi bitti, bunu listeye ekle
-                    freeSlots.push(currentFreeSlot);
-                    currentFreeSlot = null;
+                if (currentAvailableSlot) {
+                    availableSlots.push(currentAvailableSlot);
+                    currentAvailableSlot = null;
                 }
             }
         }
         
-        // Gün sonunda kalan boş slotu ekle
-        if (currentFreeSlot) {
-            freeSlots.push(currentFreeSlot);
+        // Gün sonu temizliği
+        if (currentAvailableSlot) {
+            availableSlots.push(currentAvailableSlot);
+            currentAvailableSlot = null;
         }
     }
 
-    // Sonuçları HH:MM formatına çevir ve döndür
-    return freeSlots.map(slot => ({
+    // Final formatlama ve filtreleme
+    return availableSlots.map(slot => ({
         day: slot.day,
         startTime: minutesToTime(slot.startMinutes),
-        endTime: minutesToTime(slot.endMinutes)
-    }));
+        endTime: minutesToTime(slot.endMinutes),
+        availableCount: slot.availableCount,
+        availableFriendsIds: slot.availableFriendsIds || []
+    })).filter(slot => slot.availableCount > 0);
 };
