@@ -1,5 +1,5 @@
 import { collection, getDocs, doc, getDoc } from "firebase/firestore";
-import { db, getUserProfileDocRef } from "./firebaseConfig"; // ❗ getUserProfileDocRef import edildi!
+import { db } from "./firebaseConfig"; 
 
 const DAYS_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 // ✅ Eşleştirme aralığı 08:30'da başlar ve 18:30'da biter.
@@ -38,24 +38,11 @@ const minutesToTime = (totalMinutes) => {
 // Eşleştirme döngüsünün başlangıç ve bitiş dakikalarını hesaplar
 const START_MINUTES = timeToMinutes(MATCHING_START_TIME); // 510 dakika (08:30)
 const END_MINUTES = timeToMinutes(MATCHING_END_TIME);     // 1110 dakika (18:30)
+// -------------------------------------------------------------
 
-// YARDIMCI FONKSİYON: UID'den kullanıcı adını çeker (Sadece yedek olarak)
-const fetchUserName = async (uid) => {
-    try {
-        const userProfileRef = getUserProfileDocRef(uid);
-        const docSnap = await getDoc(userProfileRef);
-        if (docSnap.exists()) {
-            return docSnap.data().name || `User (${uid.substring(0, 4)}...)`;
-        }
-        return `User (${uid.substring(0, 4)}...)`;
-    } catch (error) {
-        console.error("Error fetching username for UID:", uid, error);
-        return `User (${uid.substring(0, 4)}...)`;
-    }
-};
 
 // -------------------------------------------------------------
-// 1. DATA FETCHING (Veri Çekme) - GÜNCELLENDİ
+// 1. DATA FETCHING (Veri Çekme)
 // -------------------------------------------------------------
 
 export const getAllSchedules = async () => {
@@ -68,15 +55,8 @@ export const getAllSchedules = async () => {
         for (const userDoc of usersSnapshot.docs) {
             const userId = userDoc.id;
             
-            // 1. Programı Çek
             const scheduleDocRef = doc(db, "users", userId, "schedule", "current");
             const scheduleDoc = await getDoc(scheduleDocRef);
-
-            // 2. Kullanıcı Profilini Çek (Adı Almak İçin)
-            const profileDocRef = getUserProfileDocRef(userId); 
-            const profileDoc = await getDoc(profileDocRef);
-            const userName = profileDoc.exists() ? profileDoc.data().name : null; // ❗ Ad çekildi
-
 
             if (scheduleDoc.exists()) {
                 const scheduleData = scheduleDoc.data();
@@ -100,41 +80,23 @@ export const getAllSchedules = async () => {
 };
 
 // -------------------------------------------------------------
-// 2. MATCHING LOGIC (Eşleştirme Mantığı) - GÜNCELLENDİ
+// 2. MATCHING LOGIC (Eşleştirme Mantığı)
 // -------------------------------------------------------------
 
 /*export const findAvailableFriends = (currentUserId, allSchedules) => {
     
     const currentUserSchedule = allSchedules.find(s => s.userId === currentUserId) || {
         userId: currentUserId,
-        slots: []
+        slots: [] 
     };
-
+    
     const otherSchedules = allSchedules.filter(s => s.userId !== currentUserId);
 
-    // Arkadaşların ID ve Ad haritasını oluştur (hızlı arama için)
-    const friendDetailsMap = new Map(otherSchedules.map(s => [
-        s.userId, 
-        { 
-            id: s.userId, 
-            name: s.userName || `User (${s.userId.substring(0, 4)}…)` // ❗ Ad veya kesik UID
-        }
-    ]));
-
-
-    // ---------------------------------------------------------
-    // 2) KULLANICININ MEŞGUL OLDUĞU SLOT'LARI İŞARETLE
-    // ---------------------------------------------------------
+    // 1. Kullanıcının MEŞGUL olduğu slotları işaretler
     const currentUserBusySlots = new Set();
-
     currentUserSchedule.slots.forEach(slot => {
         const dayIndex = DAYS_ORDER.indexOf(slot.day);
         if (dayIndex === -1) return;
-
-        if (!slot.startTime || !slot.endTime) {
-            console.warn("timeToMinutes: invalid timeStr (currentUser slot):", slot);
-            return;
-        }
 
         let startMinutes = timeToMinutes(slot.startTime);
         let endMinutes = timeToMinutes(slot.endTime);
@@ -151,20 +113,14 @@ export const getAllSchedules = async () => {
         }
     });
 
-    // ---------------------------------------------------------
-    // 3) DİĞER KULLANICILARIN MEŞGUL SLOT HARİTASI
-    // ---------------------------------------------------------
-    const userBusyMap = new Map();
+
+    // 2. Diğer kullanıcıların MEŞGUL olduğu slotların haritasını çıkarır
+    const userBusyMap = new Map(); 
 
     otherSchedules.forEach(schedule => {
         schedule.slots.forEach(slot => {
             const dayIndex = DAYS_ORDER.indexOf(slot.day);
-            if (dayIndex === -1) return;
-
-            if (!slot.startTime || !slot.endTime) {
-                console.warn("timeToMinutes: invalid timeStr (otherUser slot):", slot);
-                return;
-            }
+            if (dayIndex === -1) return; 
 
             let startMinutes = timeToMinutes(slot.startTime);
             let endMinutes = timeToMinutes(slot.endTime);
@@ -179,66 +135,46 @@ export const getAllSchedules = async () => {
                 if (!userBusyMap.has(slotKey)) {
                     userBusyMap.set(slotKey, new Set());
                 }
-                userBusyMap.get(slotKey).add(schedule.userId);
+                userBusyMap.get(slotKey).add(schedule.userId); 
             }
         });
     });
 
-    // ---------------------------------------------------------
-    // 4) EŞLEŞTİRME VE BİRLEŞTİRME
-    // ---------------------------------------------------------
+    // 3. Eşleştirme yapılır (08:30 - 18:30 arası sınırlandı)
     const availableSlots = [];
     let currentAvailableSlot = null;
-
+    
     for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
-        for (let minutes = START_MINUTES; minutes < END_MINUTES; minutes += 30) {
+        // Döngü 08:30 (START_MINUTES) ile 18:30 (END_MINUTES) arasında çalışır
+        for (let minutes = START_MINUTES; minutes < END_MINUTES; minutes += 30) { 
+            
             const slotKey = `${dayIndex}_${minutes}`;
-
-            // 1) Sen bu 30 dakikada boş musun?
-            const isUserFree = !currentUserBusySlots.has(slotKey);
-
+            
+            // KONTROL 1: Sen müsait misin?
+            const isUserFree = !currentUserBusySlots.has(slotKey); 
+            
             if (isUserFree) {
+                
                 const busyFriends = userBusyMap.get(slotKey) || new Set();
-
-                // 2) Bu 30 dakikada boş olan diğer kullanıcıların ID'leri
-                const freeFriendIds = otherSchedules
-                    .map(schedule => schedule.userId)
-                    .filter(friendId => !busyFriends.has(friendId));
-
-                // 3) PLACE FİLTRESİ
-                const availableFriendsList = freeFriendIds.filter(friendId => {
-                    const friendPlace = userPlacePreference.get(friendId) || null;
-
-                    if (!currentUserPlace || !friendPlace) return true;
-                    return friendPlace === currentUserPlace;
-                }).map(friendId => friendDetailsMap.get(friendId)); // ❗ ID'leri obje (ID+Name) listesine çevirdik
-
-                const availableFriendsCount = availableFriendsList.length;
-
+                const availableFriendIds = Array.from(otherSchedules)
+                        .map(schedule => schedule.userId) 
+                        .filter(friendId => !busyFriends.has(friendId)); 
+                        
+                const availableFriendsCount = availableFriendIds.length;
+                
                 if (availableFriendsCount > 0) {
+                    
                     const slotInfo = {
                         day: DAYS_ORDER[dayIndex],
                         startMinutes: minutes,
                         endMinutes: minutes + 30,
                         availableCount: availableFriendsCount,
-                        availableFriends: availableFriendsList, // ❗ Yeni liste (ID ve Name içeriyor)
-                        place: currentUserPlace || null,
+                        availableFriendsIds: availableFriendIds
                     };
-
-                    // Aynı gündeki ardışık 30 dk blokları tek slotta birleştirme
                     
-                    // Mevcut slotun ve yeni slotun arkadaş listelerinin ID'lerini karşılaştır
-                    const newFriendIds = availableFriendsList.map(f => f.id);
-                    const oldFriendIds = currentAvailableSlot ? currentAvailableSlot.availableFriends.map(f => f.id) : [];
-                    
-                    const friendsMatch =
-                        currentAvailableSlot &&
-                        oldFriendIds.length === newFriendIds.length &&
-                        oldFriendIds.every(id => newFriendIds.includes(id)) &&
-                        currentAvailableSlot.place === slotInfo.place;
-                        
+                    const friendsMatch = (currentAvailableSlot && currentAvailableSlot.availableFriendsIds.length === availableFriendIds.length && currentAvailableSlot.availableFriendsIds.every(id => availableFriendIds.includes(id)));
 
-                    if (friendsMatch && currentAvailableSlot.day === slotInfo.day) {
+                    if (currentAvailableSlot && currentAvailableSlot.day === slotInfo.day && friendsMatch) {
                         currentAvailableSlot.endMinutes = minutes + 30;
                     } else {
                         if (currentAvailableSlot) {
@@ -246,6 +182,7 @@ export const getAllSchedules = async () => {
                         }
                         currentAvailableSlot = slotInfo;
                     }
+
                 } else {
                     if (currentAvailableSlot) {
                         availableSlots.push(currentAvailableSlot);
@@ -259,7 +196,7 @@ export const getAllSchedules = async () => {
                 }
             }
         }
-
+        
         // Gün sonu temizliği
         if (currentAvailableSlot) {
             availableSlots.push(currentAvailableSlot);
