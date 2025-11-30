@@ -8,24 +8,23 @@ const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'
 // SAAT DİLİMLERİ: 08:00'dan 19:00'a kadar tüm aralıkları oluşturur.
 // Bu, 08:30 başlangıç ve 18:30 bitiş seçeneklerini kapsar.
 // -----------------------------------------------------------------
-const START_HOUR = 8; // Dizi oluşturmak için 08:00'dan başlar
-const END_HOUR = 19; // Dizi oluşturmak için 19:00'da biter
-
-const TIMES = Array.from({ length: (END_HOUR * 2) - (START_HOUR * 2) + 1 }, (_, i) => {
-    const totalMinutes = (START_HOUR * 60) + (i * 30);
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-});
-
-// "08:30" TIMES[1]
-// "09:00" TIMES[2]
-// "18:00" TIMES[20]
-// "18:30" TIMES[21]
-
+const TIMES = [
+  "08:00", "08:30",
+  "09:00", "09:30",
+  "10:00", "10:30",
+  "11:00", "11:30",
+  "12:00", "12:30",
+  "13:00", "13:30",
+  "14:00", "14:30",
+  "15:00", "15:30",
+  "16:00", "16:30",
+  "17:00", "17:30",
+  "18:00", "18:30",
+  "19:00"
+];
 
 // Schedule Input Component
-const ScheduleInput = ({ userId }) => {
+const ScheduleInput = ({ userId, onScheduleUpdated }) => {
     const [schedule, setSchedule] = useState([]); 
     const [newSlot, setNewSlot] = useState({
         day: DAYS[0], 
@@ -36,13 +35,26 @@ const ScheduleInput = ({ userId }) => {
     const [message, setMessage] = useState(''); 
     const [isLoading, setIsLoading] = useState(false);
 
+    // ✅ Kullanıcının place tercihi
+    const [placePreference, setPlacePreference] = useState("");
+
     // Fetch existing schedule when component mounts
     useEffect(() => {
         const fetchExistingSchedule = async () => {
             if (!userId) return;
             try {
-                const existingSchedule = await getSchedule(userId);
-                setSchedule(existingSchedule);
+                const existing = await getSchedule(userId);
+
+                // Backward-compatible:
+                // Eski versiyon sadece array döndürüyordu -> direkt schedule
+                if (Array.isArray(existing)) {
+                    setSchedule(existing);
+                    setPlacePreference("");
+                } else {
+                    // Yeni versiyon: { slots, placePreference } dönüyor
+                    setSchedule(existing.slots || []);
+                    setPlacePreference(existing.placePreference || "");
+                }
             } catch (error) {
                 setMessage({ type: 'error', text: 'Could not fetch existing schedule.' });
             }
@@ -86,8 +98,13 @@ const ScheduleInput = ({ userId }) => {
         setMessage('');
 
         try {
-            await saveSchedule(userId, schedule);
+            // ✅ placePreference'i de Firestore'a gönderiyoruz
+            await saveSchedule(userId, schedule, placePreference);
             setMessage({ type: 'success', text: 'Schedule successfully saved!' });
+
+            if (onScheduleUpdated) {
+                onScheduleUpdated();
+            }
         } catch (error) {
             setMessage({ type: 'error', text: error.message || 'An error occurred during saving.' });
         } finally {
@@ -112,6 +129,27 @@ const ScheduleInput = ({ userId }) => {
             <p className="text-gray-600 mb-6">
                 Please enter your weekly class hours. These times will be used to find common free slots.
             </p>
+
+            {/* ✅ PLACE PREFERENCE SEÇİMİ */}
+            <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Preferred Place (optional)
+                </label>
+                <select
+                    value={placePreference}
+                    onChange={(e) => setPlacePreference(e.target.value)}
+                    className="w-full md:w-64 p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm"
+                >
+                    <option value="">No specific preference</option>
+                    <option value="NAR">NAR</option>
+                    <option value="ETÜMUTFAK">ETÜMUTFAK</option>
+                    <option value="SUBWAY">SUBWAY</option>
+                    {/* İstersen başka seçenekler de ekleyebilirsin */}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                    This preference will be used when matching with friends.
+                </p>
+            </div>
 
             {/* Message Area */}
             {message.text && (
@@ -143,8 +181,9 @@ const ScheduleInput = ({ userId }) => {
                         onChange={(e) => setNewSlot({ ...newSlot, startTime: e.target.value })}
                         className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     >
-                        {/* ✅ KRİTİK GÜNCELLEME: 08:30'dan başlar (index 1) ve 18:00'da biter (index 20) */}
-                        {TIMES.slice(1, TIMES.length - 2).map(time => <option key={`start-${time}`} value={time}>{time}</option>)}
+                        {TIMES.slice(1, TIMES.length - 2).map(time => (
+                            <option key={`start-${time}`} value={time}>{time}</option>
+                        ))}
                     </select>
                 </div>
 
@@ -156,8 +195,9 @@ const ScheduleInput = ({ userId }) => {
                         onChange={(e) => setNewSlot({ ...newSlot, endTime: e.target.value })}
                         className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                     >
-                        {/* ✅ KRİTİK GÜNCELLEME: 09:00'dan başlar (index 2) ve 18:30'da biter (index 21) */}
-                        {TIMES.slice(2, TIMES.length - 1).map(time => <option key={`end-${time}`} value={time}>{time}</option>)}
+                        {TIMES.slice(2, TIMES.length - 1).map(time => (
+                            <option key={`end-${time}`} value={time}>{time}</option>
+                        ))}
                     </select>
                 </div>
 

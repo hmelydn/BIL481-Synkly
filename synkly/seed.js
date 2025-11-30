@@ -47,6 +47,7 @@ const seedDatabase = async () => {
             day: slot.day,
             startTime: slot.startTime,
             endTime: slot.endTime,
+            place: slot.place || null,
         });
         return acc;
     }, {});
