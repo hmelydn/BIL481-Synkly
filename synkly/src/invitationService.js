@@ -10,29 +10,74 @@ import {
     getDocs, 
     doc, 
     updateDoc, 
-    serverTimestamp 
+    serverTimestamp,
+    getDoc 
 } from "firebase/firestore";
-import { db } from "./firebaseConfig";
+import { db, getUserProfileDocRef } from "./firebaseConfig"; 
 
 // ---------------------------------------------------
 // 2. Yardımcı: invitation koleksiyonu referansı
-//    Path: /invitations/{invitationId}
 // ---------------------------------------------------
 const getInvitationsCollectionRef = () => {
     return collection(db, "invitations");
 };
 
+
+// -------------------------------------------------------------
+// YARDIMCI FONKSİYON: UID'den kullanıcı adını çeker
+// -------------------------------------------------------------
+const fetchUserName = async (uid) => {
+    try {
+        const userProfileRef = getUserProfileDocRef(uid);
+        const docSnap = await getDoc(userProfileRef);
+        if (docSnap.exists()) {
+            return docSnap.data().name || `User (${uid.substring(0, 4)}...)`;
+        }
+        return `User (${uid.substring(0, 4)}...)`;
+    } catch (error) {
+        console.error("Error fetching username for UID:", uid, error);
+        return `User (${uid.substring(0, 4)}...)`;
+    }
+};
+
 // ---------------------------------------------------
-// 3. createInvitation
-//    - Ortak slot bulunduğunda davet oluşturan fonksiyon.
-//    - Parametreler:
-//        fromUserId   : Daveti gönderen kullanıcının UID'si
-//        fromUserName : Gönderen kullanıcının görünen adı (opsiyonel ama UI için güzel)
-//        toUserId     : Davetin gönderildiği arkadaşın UID'si
-//        slot         : { day, startTime, endTime }
+// 3. checkExistingInvitation ❗ YENİ FONKSİYON
+//    - Aynı slot için daha önce davet gönderilip gönderilmediğini kontrol eder.
+// ---------------------------------------------------
+export const checkExistingInvitation = async ({ fromUserId, toUserId, slot }) => {
+    const invitationsRef = getInvitationsCollectionRef();
+    
+    // Sadece "pending" veya "accepted" durumundaki davetleri kontrol et.
+    // "rejected" olanlar tekrar davet göndermeye izin verebilir (isteğe bağlı).
+    const q = query(
+        invitationsRef,
+        where("fromUserId", "==", fromUserId),
+        where("toUserId", "==", toUserId),
+        where("day", "==", slot.day),
+        where("startTime", "==", slot.startTime),
+        where("endTime", "==", slot.endTime),
+        where("status", "in", ["pending", "accepted"]) // Kontrol edilecek durumlar
+    );
+
+    const snap = await getDocs(q);
+    
+    // snap.empty false ise (doküman bulunduysa) zaten davet var demektir.
+    return !snap.empty; 
+};
+
+
+// ---------------------------------------------------
+// 4. createInvitation - GÜNCELLENDİ (Kontrol Eklendi)
 // ---------------------------------------------------
 export const createInvitation = async ({ fromUserId, fromUserName, toUserId, slot }) => {
     try {
+        // ❗ KRİTİK KONTROL
+        const exists = await checkExistingInvitation({ fromUserId, toUserId, slot });
+        if (exists) {
+            // Eğer zaten varsa hata fırlat
+            throw new Error("An existing pending or accepted invitation already exists for this slot.");
+        }
+
         const invitationsRef = getInvitationsCollectionRef();
 
         const docRef = await addDoc(invitationsRef, {
@@ -42,8 +87,8 @@ export const createInvitation = async ({ fromUserId, fromUserName, toUserId, slo
             day: slot.day,
             startTime: slot.startTime,
             endTime: slot.endTime,
-            place: null,             // Sonraki adımlarda dining place ekleyeceğiz
-            status: "pending",       // "pending" | "accepted" | "rejected"
+            place: null,             
+            status: "pending",       
             createdAt: serverTimestamp()
         });
 
@@ -51,42 +96,39 @@ export const createInvitation = async ({ fromUserId, fromUserName, toUserId, slo
         return docRef.id;
     } catch (error) {
         console.error("Error creating invitation:", error);
-        throw new Error("Failed to create invitation.");
+        // Hata mesajını daha anlaşılır hale getir
+        throw new Error(error.message || "Failed to create invitation.");
     }
 };
 
 // ---------------------------------------------------
-// 4. getInvitationsForUser
-//    - Belirli bir kullanıcıya gelen davetleri çeker.
-//    - Kullanım: gelen kutusu (incoming invitations) için
+// 5. getIncomingInvitations
 // ---------------------------------------------------
-
-
 export const getIncomingInvitations = async (userId) => {
     try {
         const invitationsRef = getInvitationsCollectionRef();
-        const q = query(
-            invitationsRef,
-            where("toUserId", "==", userId),
-            // 🔹 rejected olanları hiç getirme
-            where("status", "in", ["pending", "accepted"])
-        );
-
+        const q = query(invitationsRef, where("toUserId", "==", userId));
         const snap = await getDocs(q);
 
-        const results = [];
-        snap.forEach(docSnap => {
+        const resultsPromises = snap.docs.map(async (docSnap) => {
             const data = docSnap.data();
-            results.push({
+
+            let senderName = data.fromUserName;
+            if (!senderName) {
+                senderName = await fetchUserName(data.fromUserId); 
+            }
+
+            return {
                 id: docSnap.id,
                 ...data,
+                fromUserName: senderName, 
                 day: data.slot?.day ?? data.day,
                 startTime: data.slot?.startTime ?? data.startTime,
                 endTime: data.slot?.endTime ?? data.endTime,
-            });
+            };
         });
 
-        return results;
+        return Promise.all(resultsPromises);
     } catch (error) {
         console.error("Error fetching incoming invites:", error);
         throw error;
@@ -94,32 +136,31 @@ export const getIncomingInvitations = async (userId) => {
 };
 
 
-
+// ---------------------------------------------------
+// 6. getSentInvitations
+// ---------------------------------------------------
 export const getSentInvitations = async (userId) => {
     try {
         const invitationsRef = getInvitationsCollectionRef();
-        const q = query(
-            invitationsRef,
-            where("fromUserId", "==", userId),
-            // 🔹 rejected olanları hiç getirme
-            where("status", "in", ["pending", "accepted"])
-        );
-
+        const q = query(invitationsRef, where("fromUserId", "==", userId));
         const snap = await getDocs(q);
 
-        const results = [];
-        snap.forEach(docSnap => {
+        const resultsPromises = snap.docs.map(async (docSnap) => {
             const data = docSnap.data();
-            results.push({
+
+            const receiverName = await fetchUserName(data.toUserId); 
+            
+            return {
                 id: docSnap.id,
                 ...data,
+                toUserName: receiverName, 
                 day: data.slot?.day ?? data.day,
                 startTime: data.slot?.startTime ?? data.startTime,
                 endTime: data.slot?.endTime ?? data.endTime,
-            });
+            };
         });
 
-        return results;
+        return Promise.all(resultsPromises);
     } catch (error) {
         console.error("Error fetching sent invites:", error);
         throw error;
@@ -128,10 +169,7 @@ export const getSentInvitations = async (userId) => {
 
 
 // ---------------------------------------------------
-// 5. updateInvitationStatus
-//    - Davetin durumunu günceller (accepted / rejected).
-//    - Kabul durumunda ileride pre-defined text sayfasına
-//      yönlendirme için kullanılacak.
+// 7. updateInvitationStatus
 // ---------------------------------------------------
 export const updateInvitationStatus = async (invitationId, newStatus) => {
     try {
@@ -146,23 +184,3 @@ export const updateInvitationStatus = async (invitationId, newStatus) => {
         throw new Error("Failed to update invitation status.");
     }
 };
-
-// ---------------------------------------------------
-// 6. cancelInvitation
-//    - Daveti "cancelled" durumuna alır (geri çekme).
-//    - Böylece hem gönderen hem alan listesinde görünmez.
-// ---------------------------------------------------
-export const cancelInvitation = async (invitationId) => {
-    try {
-        const invitationDocRef = doc(db, "invitations", invitationId);
-        await updateDoc(invitationDocRef, {
-            status: "cancelled"
-        });
-
-        console.log("Invitation cancelled:", invitationId);
-    } catch (error) {
-        console.error("Error cancelling invitation:", error);
-        throw new Error("Failed to cancel invitation.");
-    }
-};
-
