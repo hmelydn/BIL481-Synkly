@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth'; 
-import { app } from './firebaseConfig';
+import { app, getUserProfileDocRef, db } from './firebaseConfig'; 
+import { getDoc } from 'firebase/firestore'; 
 import Login from './Login';
 import Signup from './Signup';
 import ScheduleInput from './ScheduleInput'; 
@@ -53,8 +54,16 @@ const App = () => {
     useEffect(() => {
         const auth = getAuth(app);
         
-        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             setUser(currentUser);
+            
+            if (currentUser) {
+                const name = await fetchUserName(currentUser.uid);
+                setUserName(name); 
+            } else {
+                setUserName(null);
+            }
+            
             setIsAuthReady(true);
             console.log('Auth State Changed:', currentUser ? currentUser.uid : 'Logged out');
         });
@@ -73,10 +82,8 @@ const App = () => {
             try {
                 const schedules = await getAllSchedules(); 
                 
-                // ✅ KRİTİK DEBUG: Çekilen veri setini konsola yazdır
                 console.log("DEBUG: Fetched Schedules Array:", schedules); 
                 
-                // Debug bilgisini state'e kaydet (ekranda görmek için)
                 setTotalSchedulesCount(schedules.length);
                 
                 if (schedules.length <= 1) { 
@@ -88,7 +95,6 @@ const App = () => {
                     console.log(`Matched ${results.length} available slots.`);
                 }
             } catch (error) {
-                // Hatanın kendisini yakala ve konsola yazdır (Bu, PERMISSION DENIED hatasını görmemizi sağlayabilir)
                 console.error("CRITICAL ERROR DURING DATA FETCH:", error);
                 setMatchingResults([]);
             } finally {
@@ -133,8 +139,12 @@ const App = () => {
         setCurrentScreen(screenName);
     };
 
-    const handleAuthSuccess = (loggedInUser) => {
+    const handleAuthSuccess = async (loggedInUser) => {
         setUser(loggedInUser);
+        
+        const name = await fetchUserName(loggedInUser.uid);
+        setUserName(name); 
+        
         setCurrentScreen('dashboard'); 
     };
 
@@ -143,11 +153,114 @@ const App = () => {
             const auth = getAuth(app);
             await signOut(auth);
             setUser(null);
+            setUserName(null); 
             handleNavigate('login');
         } catch (error) {
             console.error("Logout error:", error);
         }
     };
+
+    const handleUseMessage = async (message) => {
+        try {
+            await navigator.clipboard.writeText(message);
+            alert("Message copied to clipboard. You can paste it into WhatsApp, email, etc.");
+        } catch (error) {
+            console.error("Clipboard error:", error);
+            alert("Could not copy automatically. You can manually select and copy the text.");
+        }
+    };
+    
+
+    // ---------------------------------------------------
+    // FONKSİYON: Ortak slot üzerinden belirli bir kullanıcıya davet gönder - GÜNCELLENDİ
+    // ---------------------------------------------------
+    const handleSendInvite = async (friendUserId, slot) => {
+        if (!user) return;
+
+        try {
+            const fromUserName = userName; 
+
+            await createInvitation({
+                fromUserId: user.uid,
+                fromUserName,
+                toUserId: friendUserId,
+                slot,
+            });
+
+            // Başarıyla gönderildiyse davet listelerini yenile
+            alert("Invitation sent successfully!");
+            const sent = await getSentInvitations(user.uid);
+            setSentInvitations(sent);
+
+
+        } catch (error) {
+            console.error("Error sending invitation:", error);
+            
+            // ❗ createInvitation'dan gelen hata mesajını kontrol et
+            if (error.message.includes("existing pending or accepted invitation")) {
+                 alert(`Cannot send invite: You already have an active invitation for this slot to this friend.`);
+            } else {
+                 alert("An error occurred while sending the invitation. Please try again.");
+            }
+           
+        }
+    };
+
+    // ---------------------------------------------------
+    // FONKSİYON: Gelen davete cevap ver (accept / reject)
+    // ---------------------------------------------------
+    const handleRespondToInvite = async (invitationId, newStatus) => {
+        try {
+            await updateInvitationStatus(invitationId, newStatus);
+
+            if (newStatus === "accepted") {
+                const acceptedInv =
+                    incomingInvitations.find((inv) => inv.id === invitationId) || null;
+
+                if (acceptedInv) {
+                    const otherUserName = acceptedInv.fromUserName; 
+                    
+                    const chatId = await getOrCreateChatForInvitation(acceptedInv);
+
+                    setActiveChatId(chatId);
+                    setActiveChatInvitation({...acceptedInv, otherUserName});
+                    setCurrentScreen("chat");
+                }
+            }
+
+            const incoming = await getIncomingInvitations(user.uid);
+            const sent = await getSentInvitations(user.uid);
+
+            setIncomingInvitations(incoming);
+            setSentInvitations(sent);
+
+        } catch (error) {
+            console.error("Error responding to invitation:", error);
+            alert("An error occurred while updating the invitation.");
+        }
+    };
+
+    // ---------------------------------------------------
+    // FONKSİYON: Davete bağlı chat ekranını aç
+    // ---------------------------------------------------
+    const handleOpenChat = async (invitation) => {
+        try {
+            const otherUserName = invitation.toUserId === user.uid 
+                ? invitation.fromUserName 
+                : invitation.toUserName;  
+
+            const chatId = await getOrCreateChatForInvitation(invitation);
+            setActiveChatId(chatId);
+            setActiveChatInvitation({...invitation, otherUserName }); 
+            setCurrentScreen("chat");
+        } catch (error) {
+            console.error("Error opening chat:", error);
+            alert("Could not open chat.");
+        }
+    };
+
+
+
 
     // -----------------------------------------------------
     // FONKSİYON: Hazır mesajı panoya kopyala
@@ -271,7 +384,7 @@ const App = () => {
                 <div className="w-full max-w-4xl bg-white p-6 rounded-xl shadow-lg mb-4 flex justify-between items-center border-b pb-4">
                     <h1 className="text-3xl font-bold text-blue-800">Synkly</h1>
                     <div className="flex items-center space-x-4">
-                        <p className="text-sm text-gray-600 truncate max-w-xs">Welcome: {user.email}</p>
+                        <p className="text-sm text-gray-600 truncate max-w-xs">Welcome: {userName || user.email}</p> 
                         <button 
                             onClick={handleLogout}
                             className="bg-red-600 hover:bg-red-700 text-white text-sm font-bold py-1.5 px-3 rounded-lg transition duration-150"
