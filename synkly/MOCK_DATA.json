@@ -1,142 +1,80 @@
 [
-  {
-    "userId": "DUMMY_USER_1_ENG",
-    "day": "Monday",
-    "startTime": "09:00",
-    "endTime": "11:30",
-    "courseName": "CS 481 - Data Mining"
-  },
-  {
-    "userId": "DUMMY_USER_1_ENG",
-    "day": "Wednesday",
-    "startTime": "13:30",
-    "endTime": "16:00",
-    "courseName": "MAT 301 - Calculus III"
-  },
-  {
-    "userId": "DUMMY_USER_2_ENG",
-    "day": "Tuesday",
-    "startTime": "10:30",
-    "endTime": "12:00",
-    "courseName": "BIL 202 - Algorithms"
-  },
-  {
-    "userId": "DUMMY_USER_2_ENG",
-    "day": "Thursday",
-    "startTime": "15:00",
-    "endTime": "17:30",
-    "courseName": "ENG 101 - Academic Writing"
-  },
-  {
-    "userId": "DUMMY_USER_3_ENG",
-    "day": "Friday",
-    "startTime": "11:00",
-    "endTime": "13:00",
-    "courseName": "CS 481 - Data Mining"
-  },
-  {
-    "userId": "DUMMY_USER_3_ENG",
-    "day": "Monday",
-    "startTime": "14:30",
-    "endTime": "16:00",
-    "courseName": "PHY 201 - Mechanics"
-  },
-  {
-    "userId": "DUMMY_USER_4_ENG",
-    "day": "Tuesday",
-    "startTime": "14:00",
-    "endTime": "16:30",
-    "courseName": "CS 481 - Data Mining"
-  },
-  {
-    "userId": "DUMMY_USER_4_ENG",
-    "day": "Wednesday",
-    "startTime": "09:00",
-    "endTime": "11:00",
-    "courseName": "TUR 101 - Literature"
-  },
-  {
-    "userId": "DUMMY_USER_5_ENG",
-    "day": "Thursday",
-    "startTime": "10:00",
-    "endTime": "12:30",
-    "courseName": "MATH 404 - Topology"
-  },
-  {
-    "userId": "DUMMY_USER_5_ENG",
-    "day": "Friday",
-    "startTime": "14:00",
-    "endTime": "16:00",
-    "courseName": "CS 481 - Data Mining"
-  },
-  {
-    "userId": "DUMMY_USER_6_ENG",
-    "day": "Monday",
-    "startTime": "10:00",
-    "endTime": "12:30",
-    "courseName": "CS 305 - Databases"
-  },
-  {
-    "userId": "DUMMY_USER_6_ENG",
-    "day": "Tuesday",
-    "startTime": "14:30",
-    "endTime": "17:00",
-    "courseName": "MATH 404 - Topology"
-  },
-  {
-    "userId": "DUMMY_USER_7_ENG",
-    "day": "Wednesday",
-    "startTime": "11:00",
-    "endTime": "13:30",
-    "courseName": "CS 481 - Data Mining"
-  },
-  {
-    "userId": "DUMMY_USER_7_ENG",
-    "day": "Thursday",
-    "startTime": "16:30",
-    "endTime": "18:00",
-    "courseName": "PHY 201 - Mechanics"
-  },
-  {
-    "userId": "DUMMY_USER_8_ENG",
-    "day": "Friday",
-    "startTime": "13:00",
-    "endTime": "14:30",
-    "courseName": "ENG 101 - Academic Writing"
-  },
-  {
-    "userId": "DUMMY_USER_8_ENG",
-    "day": "Monday",
-    "startTime": "17:00",
-    "endTime": "18:30",
-    "courseName": "TUR 101 - Literature"
-  },
-  {
-    "userId": "DUMMY_USER_9_ENG",
-    "day": "Tuesday",
-    "startTime": "09:30",
-    "endTime": "11:00",
-    "courseName": "CS 305 - Databases"
-  },
-  {
-    "userId": "DUMMY_USER_9_ENG",
-    "day": "Wednesday",
-    "startTime": "16:00",
-    "endTime": "17:30",
-    "courseName": "MAT 301 - Calculus III"
-  },
-  {
-    "userId": "DUMMY_USER_10_ENG",
-    "day": "Thursday",
-    "startTime": "11:30",
-    "endTime": "14:00",
-    "courseName": "CS 481 - Data Mining"
-  },
-  {
-    "userId": "DUMMY_USER_10_ENG",
-    "day": "Friday",
-    "startTime": "09:00",
-    "endTime": "10:30",
-    "courseName": "Algorithms Lab"
-  }
+
+  { "userId": "DUMMY_USER_1_ENG", "day": "Monday", "startTime": "09:00", "endTime": "10:30", "place": "NAR" },
+  { "userId": "DUMMY_USER_1_ENG", "day": "Monday", "startTime": "12:00", "endTime": "13:30", "place": "NAR" },
+  { "userId": "DUMMY_USER_1_ENG", "day": "Monday", "startTime": "15:30", "endTime": "18:00", "place": "NAR" },
+  { "userId": "DUMMY_USER_1_ENG", "day": "Tuesday", "startTime": "09:30", "endTime": "11:30", "place": "NAR" },
+  { "userId": "DUMMY_USER_1_ENG", "day": "Wednesday", "startTime": "10:00", "endTime": "12:30", "place": "NAR" },
+  { "userId": "DUMMY_USER_1_ENG", "day": "Thursday", "startTime": "08:30", "endTime": "10:00", "place": "NAR" },
+  { "userId": "DUMMY_USER_1_ENG", "day": "Thursday", "startTime": "14:30", "endTime": "16:00", "place": "NAR" },
+  { "userId": "DUMMY_USER_1_ENG", "day": "Friday", "startTime": "10:30", "endTime": "12:00", "place": "NAR" },
+  { "userId": "DUMMY_USER_1_ENG", "day": "Friday", "startTime": "14:00", "endTime": "16:30", "place": "NAR" },
+
+  { "userId": "DUMMY_USER_2_ENG", "day": "Monday", "startTime": "11:00", "endTime": "12:30", "place": "ETÜMUTFAK" },
+  { "userId": "DUMMY_USER_2_ENG", "day": "Tuesday", "startTime": "08:30", "endTime": "10:30", "place": "ETÜMUTFAK" },
+  { "userId": "DUMMY_USER_2_ENG", "day": "Tuesday", "startTime": "15:00", "endTime": "17:30", "place": "ETÜMUTFAK" },
+  { "userId": "DUMMY_USER_2_ENG", "day": "Wednesday", "startTime": "11:30", "endTime": "13:00", "place": "ETÜMUTFAK" },
+  { "userId": "DUMMY_USER_2_ENG", "day": "Wednesday", "startTime": "16:00", "endTime": "18:30", "place": "ETÜMUTFAK" },
+  { "userId": "DUMMY_USER_2_ENG", "day": "Thursday", "startTime": "10:00", "endTime": "12:30", "place": "ETÜMUTFAK" },
+  { "userId": "DUMMY_USER_2_ENG", "day": "Friday", "startTime": "13:00", "endTime": "14:30", "place": "ETÜMUTFAK" },
+
+
+  { "userId": "DUMMY_USER_3_ENG", "day": "Monday", "startTime": "09:30", "endTime": "11:00", "place": "SUBWAY" },
+  { "userId": "DUMMY_USER_3_ENG", "day": "Monday", "startTime": "16:30", "endTime": "18:00", "place": "SUBWAY" },
+  { "userId": "DUMMY_USER_3_ENG", "day": "Tuesday", "startTime": "11:00", "endTime": "13:30", "place": "SUBWAY" },
+  { "userId": "DUMMY_USER_3_ENG", "day": "Wednesday", "startTime": "14:00", "endTime": "15:30", "place": "SUBWAY" },
+  { "userId": "DUMMY_USER_3_ENG", "day": "Thursday", "startTime": "10:30", "endTime": "13:00", "place": "SUBWAY" },
+  { "userId": "DUMMY_USER_3_ENG", "day": "Friday", "startTime": "14:00", "endTime": "16:30", "place": "SUBWAY" },
+
+
+  { "userId": "DUMMY_USER_4_ENG", "day": "Tuesday", "startTime": "14:30", "endTime": "16:00", "place": "NAR" },
+  { "userId": "DUMMY_USER_4_ENG", "day": "Wednesday", "startTime": "09:00", "endTime": "11:30", "place": "NAR" },
+  { "userId": "DUMMY_USER_4_ENG", "day": "Wednesday", "startTime": "13:30", "endTime": "15:00", "place": "NAR" },
+  { "userId": "DUMMY_USER_4_ENG", "day": "Thursday", "startTime": "16:00", "endTime": "17:30", "place": "NAR" },
+  { "userId": "DUMMY_USER_4_ENG", "day": "Friday", "startTime": "10:30", "endTime": "12:00", "place": "NAR" },
+  { "userId": "DUMMY_USER_4_ENG", "day": "Friday", "startTime": "15:30", "endTime": "17:00", "place": "NAR" },
+
+  { "userId": "DUMMY_USER_5_ENG", "day": "Monday", "startTime": "08:30", "endTime": "10:00", "place": "ETÜMUTFAK" },
+  { "userId": "DUMMY_USER_5_ENG", "day": "Tuesday", "startTime": "16:00", "endTime": "17:30", "place": "ETÜMUTFAK" },
+  { "userId": "DUMMY_USER_5_ENG", "day": "Wednesday", "startTime": "11:30", "endTime": "14:00", "place": "ETÜMUTFAK" },
+  { "userId": "DUMMY_USER_5_ENG", "day": "Thursday", "startTime": "14:00", "endTime": "16:30", "place": "ETÜMUTFAK" },
+  { "userId": "DUMMY_USER_5_ENG", "day": "Friday", "startTime": "09:00", "endTime": "10:30", "place": "ETÜMUTFAK" },
+
+
+  { "userId": "DUMMY_USER_6_ENG", "day": "Tuesday", "startTime": "16:00", "endTime": "18:30", "place": "SUBWAY" },
+  { "userId": "DUMMY_USER_6_ENG", "day": "Wednesday", "startTime": "09:30", "endTime": "11:00", "place": "SUBWAY" },
+  { "userId": "DUMMY_USER_6_ENG", "day": "Wednesday", "startTime": "14:30", "endTime": "16:00", "place": "SUBWAY" },
+  { "userId": "DUMMY_USER_6_ENG", "day": "Thursday", "startTime": "13:30", "endTime": "15:00", "place": "SUBWAY" },
+  { "userId": "DUMMY_USER_6_ENG", "day": "Thursday", "startTime": "16:30", "endTime": "18:00", "place": "SUBWAY" },
+  { "userId": "DUMMY_USER_6_ENG", "day": "Friday", "startTime": "17:00", "endTime": "18:30", "place": "SUBWAY" },
+
+  { "userId": "DUMMY_USER_7_ENG", "day": "Monday", "startTime": "16:00", "endTime": "17:30", "place": "NAR" },
+  { "userId": "DUMMY_USER_7_ENG", "day": "Tuesday", "startTime": "10:00", "endTime": "11:30", "place": "NAR" },
+  { "userId": "DUMMY_USER_7_ENG", "day": "Tuesday", "startTime": "14:00", "endTime": "16:30", "place": "NAR" },
+  { "userId": "DUMMY_USER_7_ENG", "day": "Wednesday", "startTime": "09:30", "endTime": "12:00", "place": "NAR" },
+  { "userId": "DUMMY_USER_7_ENG", "day": "Wednesday", "startTime": "15:00", "endTime": "17:30", "place": "NAR" },
+  { "userId": "DUMMY_USER_7_ENG", "day": "Thursday", "startTime": "11:00", "endTime": "12:30", "place": "NAR" },
+
+
+  { "userId": "DUMMY_USER_8_ENG", "day": "Monday", "startTime": "10:30", "endTime": "12:00", "place": "ETÜMUTFAK" },
+  { "userId": "DUMMY_USER_8_ENG", "day": "Monday", "startTime": "13:30", "endTime": "15:00", "place": "ETÜMUTFAK" },
+  { "userId": "DUMMY_USER_8_ENG", "day": "Wednesday", "startTime": "10:30", "endTime": "12:00", "place": "ETÜMUTFAK" },
+  { "userId": "DUMMY_USER_8_ENG", "day": "Thursday", "startTime": "10:30", "endTime": "12:00", "place": "ETÜMUTFAK" },
+  { "userId": "DUMMY_USER_8_ENG", "day": "Thursday", "startTime": "16:30", "endTime": "18:00", "place": "ETÜMUTFAK" },
+
+
+  { "userId": "DUMMY_USER_9_ENG", "day": "Tuesday", "startTime": "09:00", "endTime": "10:30", "place": "SUBWAY" },
+  { "userId": "DUMMY_USER_9_ENG", "day": "Tuesday", "startTime": "14:00", "endTime": "16:30", "place": "SUBWAY" },
+  { "userId": "DUMMY_USER_9_ENG", "day": "Wednesday", "startTime": "16:00", "endTime": "17:30", "place": "SUBWAY" },
+  { "userId": "DUMMY_USER_9_ENG", "day": "Thursday", "startTime": "11:00", "endTime": "13:30", "place": "SUBWAY" },
+  { "userId": "DUMMY_USER_9_ENG", "day": "Friday", "startTime": "09:00", "endTime": "11:30", "place": "SUBWAY" },
+  { "userId": "DUMMY_USER_9_ENG", "day": "Friday", "startTime": "14:30", "endTime": "16:00", "place": "SUBWAY" },
+
+
+  { "userId": "DUMMY_USER_10_ENG", "day": "Monday", "startTime": "15:00", "endTime": "17:30", "place": "ETÜMUTFAK" },
+  { "userId": "DUMMY_USER_10_ENG", "day": "Tuesday", "startTime": "11:30", "endTime": "13:30", "place": "ETÜMUTFAK" },
+  { "userId": "DUMMY_USER_10_ENG", "day": "Thursday", "startTime": "17:00", "endTime": "18:30", "place": "ETÜMUTFAK" },
+  { "userId": "DUMMY_USER_10_ENG", "day": "Friday", "startTime": "11:30", "endTime": "13:00", "place": "ETÜMUTFAK" },
+  { "userId": "DUMMY_USER_10_ENG", "day": "Friday", "startTime": "15:30", "endTime": "17:00", "place": "ETÜMUTFAK" },
+  { "userId": "DUMMY_USER_10_ENG", "day": "Friday", "startTime": "17:30", "endTime": "18:30", "place": "ETÜMUTFAK" }
 ]
