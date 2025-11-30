@@ -11,13 +11,11 @@ import {
     createInvitation, 
     getIncomingInvitations, 
     getSentInvitations,
-    updateInvitationStatus,
-    cancelInvitation
-} from "./invitationService";
+    updateInvitationStatus 
+} from "./invitationService"; // checkExistingInvitation'ı buraya çekmeye gerek yok, createInvitation içinde kullanılıyor.
 
 import ChatScreen from "./ChatScreen";
 import { getOrCreateChatForInvitation } from "./chatService";
-
 
 
 // -----------------------------------------------------
@@ -29,16 +27,16 @@ const App = () => {
     const [isAuthReady, setIsAuthReady] = useState(false);
     const [matchingResults, setMatchingResults] = useState([]); 
     const [isMatchingLoading, setIsMatchingLoading] = useState(false); 
-    const [totalSchedulesCount, setTotalSchedulesCount] = useState(0); // DEBUG STATE
-    const [incomingInvitations, setIncomingInvitations] = useState([]);  //Davet state'leri
+    const [totalSchedulesCount, setTotalSchedulesCount] = useState(0); 
+    const [incomingInvitations, setIncomingInvitations] = useState([]);  
     const [isLoadingInvites, setIsLoadingInvites] = useState(false);
     const [scheduleVersion, setScheduleVersion] = useState(0);
     const [showPredefinedTexts, setShowPredefinedTexts] = useState(false);
     const [activeInvitation, setActiveInvitation] = useState(null);
     const [activeChatId, setActiveChatId] = useState(null);
     const [activeChatInvitation, setActiveChatInvitation] = useState(null);
-    const [sentInvitations, setSentInvitations] = useState([]);
-
+    const [sentInvitations, setSentInvitations] = useState([]); // ❗ Gönderilen davetler state'i
+    const [userName, setUserName] = useState(null);
 
 
     // Kullanıcıya önereceğimiz basit ve nazik mesajlar
@@ -49,6 +47,36 @@ const App = () => {
     "Hi! If you’re still free, we could meet on campus around this time. What do you think?"
     ];
 
+
+    // -----------------------------------------------------
+    // FONKSİYON: Kullanıcı adını Firestore'dan çeker
+    // -----------------------------------------------------
+    const fetchUserName = async (uid) => {
+        try {
+            const userProfileRef = getUserProfileDocRef(uid);
+            const docSnap = await getDoc(userProfileRef);
+            if (docSnap.exists()) {
+                return docSnap.data().name || uid; 
+            }
+            return null;
+        } catch (error) {
+            console.error("Error fetching user name:", error);
+            return null;
+        }
+    };
+
+    // -----------------------------------------------------
+    // YARDIMCI FONKSİYON: Aynı slota daha önce davet gönderilip gönderilmediğini kontrol eder ❗ YENİ
+    // -----------------------------------------------------
+    const hasActiveInvitation = (friendId, slot) => {
+        return sentInvitations.some(inv => 
+            inv.toUserId === friendId &&
+            inv.day === slot.day &&
+            inv.startTime === slot.startTime &&
+            inv.endTime === slot.endTime &&
+            (inv.status === "pending" || inv.status === "accepted") // Beklemede veya Kabul edilmişse
+        );
+    };
 
 
     // Listen to Firebase Auth State
@@ -122,7 +150,7 @@ const App = () => {
                 const sent = await getSentInvitations(user.uid);
 
                 setIncomingInvitations(incoming);
-                setSentInvitations(sent);
+                setSentInvitations(sent); // ❗ Gönderilen davetleri de state'e kaydet
             } catch (error) {
                 console.error("Error loading invitations:", error);
             } finally {
@@ -264,124 +292,6 @@ const App = () => {
 
 
     // -----------------------------------------------------
-    // FONKSİYON: Hazır mesajı panoya kopyala
-    // -----------------------------------------------------
-    const handleUseMessage = async (message) => {
-        try {
-            await navigator.clipboard.writeText(message);
-            alert("Message copied to clipboard. You can paste it into WhatsApp, email, etc.");
-        } catch (error) {
-            console.error("Clipboard error:", error);
-            alert("Could not copy automatically. You can manually select and copy the text.");
-        }
-    };
-    
-
-    // ---------------------------------------------------
-    // FONKSİYON: Ortak slot üzerinden belirli bir kullanıcıya davet gönder
-    // ---------------------------------------------------
-    const handleSendInvite = async (friendUserId, slot) => {
-        if (!user) return;
-
-        try {
-            // Kullanıcının görünen adı varsa (profile'dan) onu da gönderebilirsin.
-            // Şimdilik sadece email'i kullanmak bile yeterli.
-            const fromUserName = user.email; 
-
-            await createInvitation({
-                fromUserId: user.uid,
-                fromUserName,
-                toUserId: friendUserId,
-                slot,
-            });
-
-            alert("Invitation sent!");
-        } catch (error) {
-            console.error("Error sending invitation:", error);
-            alert("An error occurred while sending the invitation.");
-        }
-    };
-
-    // ---------------------------------------------------
-    // FONKSİYON: Gelen davete cevap ver (accept / reject)
-    // ---------------------------------------------------
-    const handleRespondToInvite = async (invitationId, newStatus) => {
-        try {
-            await updateInvitationStatus(invitationId, newStatus);
-
-            // Kabul edilirse chat aç
-            if (newStatus === "accepted") {
-                const acceptedInv =
-                    incomingInvitations.find((inv) => inv.id === invitationId) || null;
-
-                if (acceptedInv) {
-                    const chatId = await getOrCreateChatForInvitation(acceptedInv);
-
-                    setActiveChatId(chatId);
-                    setActiveChatInvitation(acceptedInv);
-                    setCurrentScreen("chat");
-                }
-            }
-
-            // ✅ Listeyi yenile (hem gelen hem gönderilen davetler)
-            const incoming = await getIncomingInvitations(user.uid);
-            const sent = await getSentInvitations(user.uid);
-
-            setIncomingInvitations(incoming);
-            setSentInvitations(sent);
-
-        } catch (error) {
-            console.error("Error responding to invitation:", error);
-            alert("An error occurred while updating the invitation.");
-        }
-    };
-
-    // ---------------------------------------------------
-    // FONKSİYON: Daveti geri çek (sadece gönderen yapar)
-    // ---------------------------------------------------
-    const handleCancelInvite = async (invitationId) => {
-        if (!user) return;
-
-        const confirmCancel = window.confirm(
-            "Are you sure you want to cancel this invitation?"
-        );
-        if (!confirmCancel) return;
-
-        try {
-            await cancelInvitation(invitationId);
-
-            // 🔄 Listeleri yenile
-            const incoming = await getIncomingInvitations(user.uid);
-            const sent = await getSentInvitations(user.uid);
-
-            setIncomingInvitations(incoming);
-            setSentInvitations(sent);
-        } catch (error) {
-            console.error("Error cancelling invitation:", error);
-            alert("An error occurred while cancelling the invitation.");
-        }
-    };
-
-
-    // ---------------------------------------------------
-    // FONKSİYON: Davete bağlı chat ekranını aç
-    // ---------------------------------------------------
-    const handleOpenChat = async (invitation) => {
-        try {
-            const chatId = await getOrCreateChatForInvitation(invitation);
-            setActiveChatId(chatId);
-            setActiveChatInvitation(invitation);
-            setCurrentScreen("chat");
-        } catch (error) {
-            console.error("Error opening chat:", error);
-            alert("Could not open chat.");
-        }
-    };
-
-
-
-
-    // -----------------------------------------------------
     // RENDER PHASE
     // -----------------------------------------------------
 
@@ -403,6 +313,7 @@ const App = () => {
                     chatId={activeChatId}
                     invitation={activeChatInvitation}
                     onBack={() => setCurrentScreen("dashboard")}
+                    otherUserName={activeChatInvitation.otherUserName} 
                 />
             );
         }
@@ -470,17 +381,26 @@ const App = () => {
                                         </div>
                                     </div>
 
-                                    {/* INVITE BUTTONS */}
-                                    <div className="flex space-x-2 mt-3">
-                                        {slot.availableFriendsIds?.map((friendId) => (
-                                            <button
-                                                key={friendId}
-                                                onClick={() => handleSendInvite(friendId, slot)}
-                                                className="bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-1 px-3 rounded-lg shadow-md transition"
-                                            >
-                                                Invite Friend ({friendId.substring(0, 5)}…)
-                                            </button>
-                                        ))}
+                                    {/* INVITE BUTTONS - GÜNCELLENDİ */}
+                                    <div className="flex space-x-2 mt-3 flex-wrap">
+                                        {slot.availableFriends?.map((friend) => {
+                                            const isInvited = hasActiveInvitation(friend.id, slot);
+
+                                            return (
+                                                <button
+                                                    key={friend.id}
+                                                    onClick={() => handleSendInvite(friend.id, slot)}
+                                                    disabled={isInvited} // ❗ Butonu devre dışı bırak
+                                                    className={`text-white text-xs font-bold py-1 px-3 rounded-lg shadow-md transition mb-1 ${
+                                                        isInvited 
+                                                            ? 'bg-gray-400 cursor-not-allowed' 
+                                                            : 'bg-green-600 hover:bg-green-700'
+                                                    }`}
+                                                >
+                                                    {isInvited ? `Invited (${isInvited ? sentInvitations.find(inv => inv.toUserId === friend.id && inv.day === slot.day && inv.startTime === slot.startTime)?.status : ''})` : `Invite ${friend.name}`} 
+                                                </button>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             ))}
@@ -502,8 +422,8 @@ const App = () => {
                     )}
 
                    {incomingInvitations.map((invitation) => {
-                    // Bu davetteki rolün: davet edilen misin (receiver) yoksa daveti gönderen mi?
                     const isReceiver = invitation.toUserId === user.uid;
+                    const senderDisplay = invitation.fromUserName || invitation.fromUserId; 
 
                     return (
                         <div
@@ -512,7 +432,7 @@ const App = () => {
                         >
                             <p>
                                 <strong>From:</strong>{" "}
-                                {invitation.fromUserName || invitation.fromUserId}
+                                {senderDisplay}
                             </p>
                             <p>
                                 <strong>Time:</strong>{" "}
@@ -573,52 +493,46 @@ const App = () => {
                             You haven't sent any invitations yet.
                         </p>
                     ) : (
-                        sentInvitations.map((invitation) => (
-                            <div
-                                key={invitation.id}
-                                className="p-4 mt-3 border rounded-lg bg-gray-50 shadow-sm"
-                            >
-                                <p>
-                                    <strong>To:</strong>{" "}
-                                    {invitation.toUserName || invitation.toUserId}
-                                </p>
-                                <p>
-                                    <strong>Time:</strong>{" "}
-                                    {invitation.day} {invitation.startTime} - {invitation.endTime}
-                                </p>
-                                <p>
-                                    <strong>Status:</strong> {invitation.status}
-                                </p>
+                        sentInvitations.map((invitation) => {
+                            const receiverDisplay = invitation.toUserName || invitation.toUserId; 
 
-                                <div className="mt-3 flex space-x-3">
-                                    {/* Accepted → Chat açılabilir */}
+                            return (
+                                <div
+                                    key={invitation.id}
+                                    className="p-4 mt-3 border rounded-lg bg-gray-50 shadow-sm"
+                                >
+                                    <p>
+                                        <strong>To:</strong>{" "}
+                                        {receiverDisplay}
+                                    </p>
+                                    <p>
+                                        <strong>Time:</strong>{" "}
+                                        {invitation.day} {invitation.startTime} - {invitation.endTime}
+                                    </p>
+                                    <p>
+                                        <strong>Status:</strong> {invitation.status}
+                                    </p>
+
+                                    {/* Karşı taraf kabul ettiyse sen de chat açabilesin */}
                                     {invitation.status === "accepted" && (
-                                        <button
-                                            onClick={() => handleOpenChat(invitation)}
-                                            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded"
-                                        >
-                                            Open Chat
-                                        </button>
-                                    )}
-
-                                    {/* Pending → Geri çekme butonu */}
-                                    {invitation.status === "pending" && (
-                                        <button
-                                            onClick={() => handleCancelInvite(invitation.id)}
-                                            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded"
-                                        >
-                                            Cancel Invitation
-                                        </button>
+                                        <div className="mt-3">
+                                            <button
+                                                onClick={() => handleOpenChat(invitation)}
+                                                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded"
+                                            >
+                                                Open Chat
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
-                            </div>
-                        ))
+                            );
+                        })
                     )}
                 </div>
 
 
-
                 {/* PRE-DEFINED TEXT PANEL (Invitation accepted olduğunda gösterilir) */}
+                {/* ... (Kod aynı kalır) ... */}
                 {showPredefinedTexts && activeInvitation && (
                     <div className="w-full max-w-4xl mt-6 p-6 bg-blue-50 rounded-xl shadow-lg border border-blue-200">
                         <h2 className="text-2xl font-semibold mb-2 text-blue-800">

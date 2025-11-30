@@ -82,10 +82,11 @@ export const getAllSchedules = async () => {
                 const scheduleData = scheduleDoc.data();
                 
                 allSchedules.push({
-                userId: userId,
-                slots: scheduleData.slots || [],
-                placePreference: scheduleData.placePreference || null,
-            });
+                    userId: userId,
+                    userName: userName, // ❗ Ad eklendi
+                    slots: scheduleData.slots || [],
+                    placePreference: scheduleData.placePreference || null,
+                });
 
             }
         }
@@ -103,8 +104,23 @@ export const getAllSchedules = async () => {
 // 2. MATCHING LOGIC (Eşleştirme Mantığı) - GÜNCELLENDİ
 // -------------------------------------------------------------
 
-/*export const findAvailableFriends = (currentUserId, allSchedules) => {
-    
+export const findAvailableFriends = (currentUserId, allSchedules) => {
+    // ---------------------------------------------------------
+    // 0) Her kullanıcı için place tercihini çıkar
+    // ---------------------------------------------------------
+    const userPlacePreference = new Map(); // userId -> place (örn: "NAR")
+
+    allSchedules.forEach(schedule => {
+        const place = schedule.placePreference || null;
+        userPlacePreference.set(schedule.userId, place);
+    });
+
+    const currentUserPlace = userPlacePreference.get(currentUserId) || null;
+
+
+    // ---------------------------------------------------------
+    // 1) Kullanıcının kendi programını ve diğerlerini ayır
+    // ---------------------------------------------------------
     const currentUserSchedule = allSchedules.find(s => s.userId === currentUserId) || {
         userId: currentUserId,
         slots: []
@@ -139,13 +155,6 @@ export const getAllSchedules = async () => {
         let startMinutes = timeToMinutes(slot.startTime);
         let endMinutes = timeToMinutes(slot.endTime);
 
-        // ❗ Eğer start veya end bozuksa bu slotu tamamen atla
-        if (startMinutes === null || endMinutes === null) {
-            console.warn("Skipping invalid currentUser slot:", slot);
-            return; // forEach içindeki bu slotu geç
-        }
-
-
         for (let currentMinutes = startMinutes; currentMinutes < endMinutes; currentMinutes += 30) {
             currentUserBusySlots.add(`${dayIndex}_${currentMinutes}`);
         }
@@ -168,11 +177,6 @@ export const getAllSchedules = async () => {
 
             let startMinutes = timeToMinutes(slot.startTime);
             let endMinutes = timeToMinutes(slot.endTime);
-
-            if (startMinutes === null || endMinutes === null) {
-            console.warn("Skipping invalid otherUser slot:", slot);
-            return;
-        }
 
             for (let currentMinutes = startMinutes; currentMinutes < endMinutes; currentMinutes += 30) {
                 const slotKey = `${dayIndex}_${currentMinutes}`;
@@ -267,182 +271,6 @@ export const getAllSchedules = async () => {
         }
     }
 
-    // Final formatlama ve filtreleme
-    return availableSlots.map(slot => ({
-        day: slot.day,
-        startTime: minutesToTime(slot.startMinutes),
-        endTime: minutesToTime(slot.endMinutes),
-        availableCount: slot.availableCount,
-        availableFriendsIds: slot.availableFriendsIds || []
-    })).filter(slot => slot.availableCount > 0);
-};*/
-
-export const findAvailableFriends = (currentUserId, allSchedules) => {
-    // ---------------------------------------------------------
-    // 0) Her kullanıcı için place tercihini çıkar
-    //    -> Veride genelde tüm slot'lar aynı place'e sahip, o yüzden
-    //       ilk bulduğumuz place'i o kullanıcı için tercih olarak alıyoruz.
-    // ---------------------------------------------------------
-    // Her kullanıcı için placePreference doğrudan dokümandan okunur
-    const userPlacePreference = new Map(); // userId -> place (örn: "NAR")
-
-    allSchedules.forEach(schedule => {
-        const place = schedule.placePreference || null;
-        userPlacePreference.set(schedule.userId, place);
-    });
-
-    const currentUserPlace = userPlacePreference.get(currentUserId) || null;
-
-
-    // ---------------------------------------------------------
-    // 1) Kullanıcının kendi programını ve diğerlerini ayır
-    // ---------------------------------------------------------
-    const currentUserSchedule = allSchedules.find(s => s.userId === currentUserId) || {
-        userId: currentUserId,
-        slots: []
-    };
-
-    const otherSchedules = allSchedules.filter(s => s.userId !== currentUserId);
-
-    // ---------------------------------------------------------
-    // 2) KULLANICININ MEŞGUL OLDUĞU SLOT'LARI İŞARETLE
-    // ---------------------------------------------------------
-    const currentUserBusySlots = new Set();
-
-    currentUserSchedule.slots.forEach(slot => {
-        const dayIndex = DAYS_ORDER.indexOf(slot.day);
-        if (dayIndex === -1) return;
-
-        if (!slot.startTime || !slot.endTime) {
-            console.warn("timeToMinutes: invalid timeStr (currentUser slot):", slot);
-            return;
-        }
-
-        let startMinutes = timeToMinutes(slot.startTime);
-        let endMinutes = timeToMinutes(slot.endTime);
-
-        for (let currentMinutes = startMinutes; currentMinutes < endMinutes; currentMinutes += 30) {
-            currentUserBusySlots.add(`${dayIndex}_${currentMinutes}`);
-        }
-    });
-
-    // ---------------------------------------------------------
-    // 3) DİĞER KULLANICILARIN MEŞGUL SLOT HARİTASI
-    //    userBusyMap: key = "dayIndex_minutes" -> Set(userId)
-    // ---------------------------------------------------------
-    const userBusyMap = new Map();
-
-    otherSchedules.forEach(schedule => {
-        schedule.slots.forEach(slot => {
-            const dayIndex = DAYS_ORDER.indexOf(slot.day);
-            if (dayIndex === -1) return;
-
-            if (!slot.startTime || !slot.endTime) {
-                console.warn("timeToMinutes: invalid timeStr (otherUser slot):", slot);
-                return;
-            }
-
-            let startMinutes = timeToMinutes(slot.startTime);
-            let endMinutes = timeToMinutes(slot.endTime);
-
-            for (let currentMinutes = startMinutes; currentMinutes < endMinutes; currentMinutes += 30) {
-                const slotKey = `${dayIndex}_${currentMinutes}`;
-                if (!userBusyMap.has(slotKey)) {
-                    userBusyMap.set(slotKey, new Set());
-                }
-                userBusyMap.get(slotKey).add(schedule.userId);
-            }
-        });
-    });
-
-    // ---------------------------------------------------------
-    // 4) EŞLEŞTİRME: 08:30 - 18:30 ARASINDA
-    //    + PLACE FİLTRESİ:
-    //      - Hem sen boş olacaksın
-    //      - Hem diğer user boş olacak
-    //      - Ve place tercihleri eşit olacak (ikisi de tanımlı ise)
-    // ---------------------------------------------------------
-    const availableSlots = [];
-    let currentAvailableSlot = null;
-
-    for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
-        for (let minutes = START_MINUTES; minutes < END_MINUTES; minutes += 30) {
-            const slotKey = `${dayIndex}_${minutes}`;
-
-            // 1) Sen bu 30 dakikada boş musun?
-            const isUserFree = !currentUserBusySlots.has(slotKey);
-
-            if (isUserFree) {
-                const busyFriends = userBusyMap.get(slotKey) || new Set();
-
-                // 2) Bu 30 dakikada boş olan diğer kullanıcılar
-                const freeFriendIds = otherSchedules
-                    .map(schedule => schedule.userId)
-                    .filter(friendId => !busyFriends.has(friendId));
-
-                // 3) PLACE FİLTRESİ
-                const availableFriendIds = freeFriendIds.filter(friendId => {
-                    const friendPlace = userPlacePreference.get(friendId) || null;
-
-                    // Eğer ikisinden biri place belirtmemişse, çok katı davranmayalım:
-                    // Böyle kullanıcıları "her yerde olurum" gibi kabul ediyoruz.
-                    if (!currentUserPlace || !friendPlace) return true;
-
-                    // İkisi de place belirttiyse, eşit olmalı
-                    return friendPlace === currentUserPlace;
-                });
-
-                const availableFriendsCount = availableFriendIds.length;
-
-                if (availableFriendsCount > 0) {
-                    const slotInfo = {
-                        day: DAYS_ORDER[dayIndex],
-                        startMinutes: minutes,
-                        endMinutes: minutes + 30,
-                        availableCount: availableFriendsCount,
-                        availableFriendsIds: availableFriendIds,
-                        // Bu slot için ortak place bilgisi (şimdilik senin tercihin)
-                        place: currentUserPlace || null,
-                    };
-
-                    // Aynı gündeki ardışık 30 dk blokları tek slotta birleştirme
-                    const friendsMatch =
-                        currentAvailableSlot &&
-                        currentAvailableSlot.availableFriendsIds.length === availableFriendIds.length &&
-                        currentAvailableSlot.availableFriendsIds.every(id =>
-                            availableFriendIds.includes(id)
-                        ) &&
-                        currentAvailableSlot.place === slotInfo.place;
-
-                    if (friendsMatch && currentAvailableSlot.day === slotInfo.day) {
-                        currentAvailableSlot.endMinutes = minutes + 30;
-                    } else {
-                        if (currentAvailableSlot) {
-                            availableSlots.push(currentAvailableSlot);
-                        }
-                        currentAvailableSlot = slotInfo;
-                    }
-                } else {
-                    if (currentAvailableSlot) {
-                        availableSlots.push(currentAvailableSlot);
-                        currentAvailableSlot = null;
-                    }
-                }
-            } else {
-                if (currentAvailableSlot) {
-                    availableSlots.push(currentAvailableSlot);
-                    currentAvailableSlot = null;
-                }
-            }
-        }
-
-        // Gün sonu temizliği
-        if (currentAvailableSlot) {
-            availableSlots.push(currentAvailableSlot);
-            currentAvailableSlot = null;
-        }
-    }
-
     // ---------------------------------------------------------
     // 5) Çıktıyı UI için formatla
     // ---------------------------------------------------------
@@ -452,7 +280,7 @@ export const findAvailableFriends = (currentUserId, allSchedules) => {
             startTime: minutesToTime(slot.startMinutes),
             endTime: minutesToTime(slot.endMinutes),
             availableCount: slot.availableCount,
-            availableFriendsIds: slot.availableFriendsIds || [],
+            availableFriends: slot.availableFriends || [], // ❗ Yeni liste
             place: slot.place || null,
         }))
         .filter(slot => slot.availableCount > 0);
