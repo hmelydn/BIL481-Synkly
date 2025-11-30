@@ -65,7 +65,13 @@ export const createInvitation = async ({ fromUserId, fromUserName, toUserId, slo
 export const getIncomingInvitations = async (userId) => {
     try {
         const invitationsRef = getInvitationsCollectionRef();
-        const q = query(invitationsRef, where("toUserId", "==", userId));
+        const q = query(
+            invitationsRef,
+            where("toUserId", "==", userId),
+            // 🔹 rejected olanları hiç getirme
+            where("status", "in", ["pending", "accepted"])
+        );
+
         const snap = await getDocs(q);
 
         const results = [];
@@ -88,10 +94,17 @@ export const getIncomingInvitations = async (userId) => {
 };
 
 
+
 export const getSentInvitations = async (userId) => {
     try {
         const invitationsRef = getInvitationsCollectionRef();
-        const q = query(invitationsRef, where("fromUserId", "==", userId));
+        const q = query(
+            invitationsRef,
+            where("fromUserId", "==", userId),
+            // 🔹 rejected olanları hiç getirme
+            where("status", "in", ["pending", "accepted"])
+        );
+
         const snap = await getDocs(q);
 
         const results = [];
@@ -133,3 +146,23 @@ export const updateInvitationStatus = async (invitationId, newStatus) => {
         throw new Error("Failed to update invitation status.");
     }
 };
+
+// ---------------------------------------------------
+// 6. cancelInvitation
+//    - Daveti "cancelled" durumuna alır (geri çekme).
+//    - Böylece hem gönderen hem alan listesinde görünmez.
+// ---------------------------------------------------
+export const cancelInvitation = async (invitationId) => {
+    try {
+        const invitationDocRef = doc(db, "invitations", invitationId);
+        await updateDoc(invitationDocRef, {
+            status: "cancelled"
+        });
+
+        console.log("Invitation cancelled:", invitationId);
+    } catch (error) {
+        console.error("Error cancelling invitation:", error);
+        throw new Error("Failed to cancel invitation.");
+    }
+};
+

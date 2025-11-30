@@ -11,7 +11,8 @@ import {
     createInvitation, 
     getIncomingInvitations, 
     getSentInvitations,
-    updateInvitationStatus 
+    updateInvitationStatus,
+    cancelInvitation
 } from "./invitationService";
 
 import ChatScreen from "./ChatScreen";
@@ -336,6 +337,33 @@ const App = () => {
     };
 
     // ---------------------------------------------------
+    // FONKSİYON: Daveti geri çek (sadece gönderen yapar)
+    // ---------------------------------------------------
+    const handleCancelInvite = async (invitationId) => {
+        if (!user) return;
+
+        const confirmCancel = window.confirm(
+            "Are you sure you want to cancel this invitation?"
+        );
+        if (!confirmCancel) return;
+
+        try {
+            await cancelInvitation(invitationId);
+
+            // 🔄 Listeleri yenile
+            const incoming = await getIncomingInvitations(user.uid);
+            const sent = await getSentInvitations(user.uid);
+
+            setIncomingInvitations(incoming);
+            setSentInvitations(sent);
+        } catch (error) {
+            console.error("Error cancelling invitation:", error);
+            alert("An error occurred while cancelling the invitation.");
+        }
+    };
+
+
+    // ---------------------------------------------------
     // FONKSİYON: Davete bağlı chat ekranını aç
     // ---------------------------------------------------
     const handleOpenChat = async (invitation) => {
@@ -562,21 +590,32 @@ const App = () => {
                                     <strong>Status:</strong> {invitation.status}
                                 </p>
 
-                                {/* Karşı taraf kabul ettiyse sen de chat açabilesin */}
-                                {invitation.status === "accepted" && (
-                                    <div className="mt-3">
+                                <div className="mt-3 flex space-x-3">
+                                    {/* Accepted → Chat açılabilir */}
+                                    {invitation.status === "accepted" && (
                                         <button
                                             onClick={() => handleOpenChat(invitation)}
                                             className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded"
                                         >
                                             Open Chat
                                         </button>
-                                    </div>
-                                )}
+                                    )}
+
+                                    {/* Pending → Geri çekme butonu */}
+                                    {invitation.status === "pending" && (
+                                        <button
+                                            onClick={() => handleCancelInvite(invitation.id)}
+                                            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded"
+                                        >
+                                            Cancel Invitation
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         ))
                     )}
                 </div>
+
 
 
                 {/* PRE-DEFINED TEXT PANEL (Invitation accepted olduğunda gösterilir) */}
