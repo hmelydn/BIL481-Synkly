@@ -13,7 +13,7 @@ const PREDEFINED_MESSAGES = [
   "Hi! If you’re still free, we could meet on campus around this time. What do you think?",
 ];
 
-const ChatScreen = ({ user, chatId, invitation, onBack, otherUserName }) => { // ❗ otherUserName prop'u eklendi
+const ChatScreen = ({ user, chatId, invitation, onBack }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
 
@@ -49,8 +49,6 @@ const ChatScreen = ({ user, chatId, invitation, onBack, otherUserName }) => { //
     handleSend(msg);
   };
 
-  const friendDisplay = otherUserName || otherUserId.substring(0, 6); // ❗ Adı kullan
-
   return (
     <div className="min-h-screen p-4 bg-gray-50 flex flex-col items-center">
       {/* HEADER */}
@@ -67,7 +65,7 @@ const ChatScreen = ({ user, chatId, invitation, onBack, otherUserName }) => { //
           {invitation.slot?.startTime} - {invitation.slot?.endTime}
         </h1>
         <div className="text-xs text-gray-500">
-          with user: {friendDisplay}… {/* ❗ Adı kullan */}
+          with user: {otherUserId.substring(0, 6)}…
         </div>
       </div>
 
@@ -89,13 +87,13 @@ const ChatScreen = ({ user, chatId, invitation, onBack, otherUserName }) => { //
         className={`flex ${isMe ? "justify-end" : "justify-start"} mb-2`}
       >
         <div className="max-w-xs flex flex-col">
-          {/* KİMDEN GELDİ ETİKETİ - GÜNCELLENDİ */}
+          {/* KİMDEN GELDİ ETİKETİ */}
           <span
             className={`text-[10px] mb-1 uppercase tracking-wide ${
               isMe ? "text-blue-500 self-end" : "text-gray-500 self-start"
             }`}
           >
-            {isMe ? "You" : friendDisplay} {/* ❗ Adı kullan */}
+            {isMe ? "You" : `Friend (${otherUserId.substring(0, 4)}…)`}
           </span>
 
           {/* MESAJ BALONU */}
