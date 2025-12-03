@@ -1,111 +1,90 @@
 import React, { useState } from 'react';
 import { handleLogin } from './authService'; 
-import { AlertTriangle, LogIn } from 'lucide-react'; 
+import { User, Lock, ArrowRight } from 'lucide-react';
 
-const Login = ({ onLoginSuccess, onNavigate }) => { 
-    // State definitions
+const Login = ({ onLoginSuccess, onNavigateToSignup }) => { 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState(''); 
-    const [isLoading, setIsLoading] = useState(false); 
+    const [loading, setLoading] = useState(false);
 
-    // Handle form submission
     const handleSubmit = async (e) => {
         e.preventDefault(); 
-        setError(''); 
-        setIsLoading(true); 
-
+        setLoading(true);
         try {
-            const user = await handleLogin(email, password);
-            
-            if (onLoginSuccess) {
-                onLoginSuccess(user);
-            }
-            
-            setEmail('');
-            setPassword('');
-            
+            await handleLogin(email, password);
+            onLoginSuccess();
         } catch (err) {
-            let errorMessage = "Login failed. Please check your email and password.";
-            
-            if (err.code === 'auth/invalid-credential') {
-                errorMessage = "Invalid login credentials. User not found or bad password.";
-            } else if (err.message) {
-                 errorMessage = err.message;
-            }
-            
-            setError(errorMessage);
+            alert("Giriş Hatası: " + err.message);
         } finally {
-            setIsLoading(false); 
+            setLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-            <div className="w-full max-w-md bg-white p-8 rounded-xl shadow-2xl">
-                <h2 className="text-3xl font-extrabold text-gray-900 mb-6 text-center">Synkly Login</h2>
-                <p className="text-center text-sm text-gray-600 mb-8">
-                    Sign in to access your schedule and find matches.
-                </p>
-
-                {/* Error Message Area */}
-                {error && (
-                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg flex items-center mb-4" role="alert">
-                        <AlertTriangle className="w-5 h-5 mr-3 flex-shrink-0" />
-                        <span className="block sm:inline">{error}</span>
+        <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50">
+            {/* Logo Alanı */}
+            <div className="mb-8 text-center">
+                <h1 className="text-4xl font-extrabold text-indigo-600 tracking-tight">Synkly.</h1>
+                <p className="text-slate-500 mt-2">Programını eşle, sosyalleş.</p>
+            </div>
+            
+            {/* DIŞ KUTU (Gölge ve Beyaz Alan) */}
+            <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-100">
+                
+                {/* İÇ FORM ALANI */}
+                <div className="space-y-6">
+                    <div className="text-center">
+                        <h2 className="text-2xl font-bold text-slate-800">Giriş Yap</h2>
                     </div>
-                )} 
 
-                <form onSubmit={handleSubmit} className="space-y-4"> 
-                    
-                    {/* Email Field */}
-                    <div>
-                        <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
-                        <input
-                            id="email"
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                            placeholder="e.g., user@uni.edu"
-                        />
-                    </div>
-                    
-                    {/* Password Field */}
-                    <div>
-                        <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
-                        <input
-                            id="password"
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                            placeholder="Your secure password"
-                        />
-                    </div>
-                    
-                    <button 
-                        type="submit"
-                        disabled={isLoading}
-                        className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
-                            isLoading ? 'bg-green-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150'
-                        }`}
-                    >
-                        {isLoading ? 'Logging In...' : <><LogIn className="w-5 h-5 mr-2" /> Log In</>}
-                    </button> 
-                </form>
+                    <form onSubmit={handleSubmit} className="space-y-5">
+                        
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">E-posta</label>
+                            <div className="relative">
+                                <User className="absolute left-3 top-3 text-slate-400 w-5 h-5" />
+                                <input 
+                                    type="email" 
+                                    placeholder="ornek@mail.com"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none text-slate-800"
+                                />
+                            </div>
+                        </div>
 
-                <p className="mt-6 text-center text-sm text-gray-600">
-                    Don't have an account? 
-                    <button 
-                        onClick={() => onNavigate('signup')} 
-                        className="font-medium text-blue-600 hover:text-blue-500 ml-1"
-                    >
-                        Sign Up
-                    </button>
-                </p>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Şifre</label>
+                            <div className="relative">
+                                <Lock className="absolute left-3 top-3 text-slate-400 w-5 h-5" />
+                                <input 
+                                    type="password" 
+                                    placeholder="••••••••"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none text-slate-800"
+                                />
+                            </div>
+                        </div>
+
+                        <button 
+                            type="submit" 
+                            disabled={loading}
+                            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition-all transform active:scale-95 flex items-center justify-center shadow-lg shadow-indigo-200"
+                        >
+                            {loading ? 'Giriş Yapılıyor...' : 'Giriş Yap'}
+                        </button>
+
+                    </form>
+                </div>
+            </div>
+
+            {/* Alt Link */}
+            <div className="mt-8 text-center">
+                <p className="text-slate-600">Hesabın yok mu?</p>
+                <button onClick={onNavigateToSignup} className="text-indigo-600 font-semibold hover:text-indigo-800 flex items-center justify-center mx-auto mt-1 group">
+                    Kayıt Ol <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform"/>
+                </button>
             </div>
         </div>
     );

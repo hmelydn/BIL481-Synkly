@@ -1,16 +1,26 @@
 // src/ChatScreen.jsx
 import React, { useEffect, useState } from "react";
-import { ArrowLeft, MessageCircle } from "lucide-react";
+import { ArrowLeft, MessageCircle, Send } from "lucide-react";
 import {
   sendChatMessage,
   subscribeToChatMessages,
 } from "./chatService";
 
-const PREDEFINED_MESSAGES = [
-  "Hey! I saw we’re both free at this time. Would you like to grab a coffee or lunch? 🙂",
-  "Hi! Looks like we share a free slot. Would you like to meet up and study together?",
-  "Hey! I'm free at this time – would you like to catch up for a quick chat?",
-  "Hi! If you’re still free, we could meet on campus around this time. What do you think?",
+// 1. BAŞLANGIÇ MESAJLARI (Sadece Yemek/Kahve Odaklı)
+const STARTER_MESSAGES = [
+  "Hey! Let's grab some food? Meet in front of the venue? 🍔",      // Yemek yiyelim mi?
+  "Hi! I'm heading for coffee. Meet me at the entrance? ☕",        // Kahveye gidiyorum, girişte buluşalım?
+  "Hey! Let's meet at the entrance for a quick bite? 🥪",           // Hızlıca bir şeyler yiyelim?
+  "Hi! I'm free. Let's meet in front of the food place. 📍",        // Yemek yerinin önünde buluşalım.
+];
+
+// 2. CEVAP MESAJLARI (Karar Odaklı: Kabul/Red)
+const REPLY_MESSAGES = [
+  "Perfect! See you in front of the place. 👍",    // Tamam, mekanın önünde görüşürüz.
+  "Great! I'm heading to the entrance now. 🏃‍♂️",    // Harika, girişe geçiyorum.
+  "Sounds good! I'll wait for you at the door. 🤝", // Kapıda bekleyeceğim.
+  "Sorry, I'm not hungry right now. 😔",           // Aç değilim.
+  "I'm busy at the moment, maybe next time. ⏳",   // Meşgulüm.
 ];
 
 const ChatScreen = ({ user, chatId, invitation, onBack }) => {
@@ -28,7 +38,6 @@ const ChatScreen = ({ user, chatId, invitation, onBack }) => {
     return () => unsubscribe && unsubscribe();
   }, [chatId]);
 
-  // 🔹 Artık sadece butondan gelen text ile çalışıyor
   const handleSend = async (text) => {
     const trimmed = (text || "").trim();
     if (!trimmed) return;
@@ -41,38 +50,37 @@ const ChatScreen = ({ user, chatId, invitation, onBack }) => {
     }
   };
 
-  const handleUsePredefined = (msg) => {
-    // Butona basınca direkt gönder
-    handleSend(msg);
-  };
-
   return (
     <div className="min-h-screen p-4 bg-gray-50 flex flex-col items-center">
       {/* HEADER */}
       <div className="w-full max-w-3xl flex items-center justify-between mb-4">
         <button
           onClick={onBack}
-          className="flex items-center text-sm text-gray-700 hover:text-gray-900"
+          className="flex items-center text-sm text-gray-700 hover:text-gray-900 font-bold"
         >
           <ArrowLeft className="w-4 h-4 mr-1" /> Back
         </button>
-        <h1 className="text-xl font-bold text-blue-800 flex items-center text-center">
-          <MessageCircle className="w-5 h-5 mr-2" />
-          Chat for {invitation.slot?.day}{" "}
-          {invitation.slot?.startTime} - {invitation.slot?.endTime}
-        </h1>
-        <div className="text-xs text-gray-500">
-          with user: {otherUserId.substring(0, 6)}…
+        <div className="text-center">
+             <h1 className="text-lg font-bold text-indigo-900 flex items-center justify-center">
+                <MessageCircle className="w-5 h-5 mr-2" />
+                Chat
+             </h1>
+             <p className="text-xs text-indigo-600">
+                {invitation.slot?.day} • {invitation.slot?.startTime}
+             </p>
         </div>
+        <div className="w-10"></div> {/* Spacer */}
       </div>
 
       {/* CHAT AREA */}
-      <div className="w-full max-w-3xl flex-1 flex flex-col bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-        <div className="flex-1 p-4 overflow-y-auto space-y-2">
+      <div className="w-full max-w-3xl flex-1 flex flex-col bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden mb-4">
+        <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50">
           {messages.length === 0 ? (
-            <p className="text-gray-400 text-sm italic">
-              No messages yet. You can start with a polite predefined message below.
-            </p>
+            <div className="flex flex-col items-center justify-center h-full text-gray-400 text-sm italic opacity-60">
+               <MessageCircle className="w-12 h-12 mb-2"/>
+               <p>No messages yet.</p>
+               <p>Choose a starter below!</p>
+            </div>
           ) : (
             messages.map((msg) => {
               const isMe = msg.senderId === user.uid;
@@ -82,26 +90,24 @@ const ChatScreen = ({ user, chatId, invitation, onBack }) => {
                   key={msg.id}
                   className={`flex ${
                     isMe ? "justify-end" : "justify-start"
-                  } mb-2`}
+                  }`}
                 >
-                  <div className="max-w-xs flex flex-col">
-                    {/* KİMDEN GELDİ ETİKETİ */}
+                  <div className={`max-w-[80%] flex flex-col ${isMe ? "items-end" : "items-start"}`}>
                     <span
                       className={`text-[10px] mb-1 uppercase tracking-wide ${
                         isMe
-                          ? "text-blue-500 self-end"
+                          ? "text-indigo-500 self-end"
                           : "text-gray-500 self-start"
                       }`}
                     >
-                      {isMe ? "You" : `Friend (${otherUserId.substring(0, 4)}…)`}
+                      {isMe ? "You" : `Friend`}
                     </span>
 
-                    {/* MESAJ BALONU */}
                     <div
-                      className={`px-3 py-2 rounded-lg text-sm ${
+                      className={`px-4 py-2.5 rounded-2xl text-sm shadow-sm ${
                         isMe
-                          ? "bg-blue-600 text-white rounded-br-none self-end"
-                          : "bg-gray-200 text-gray-900 rounded-bl-none self-start"
+                          ? "bg-indigo-600 text-white rounded-br-none"
+                          : "bg-white text-gray-800 border border-gray-200 rounded-bl-none"
                       }`}
                     >
                       {msg.text}
@@ -112,34 +118,43 @@ const ChatScreen = ({ user, chatId, invitation, onBack }) => {
             })
           )}
         </div>
-
-        {/* ❌ INPUT BAR YOK – kullanıcı serbest yazamaz */}
-        <div className="border-t p-3 text-xs text-gray-500 text-center">
-          You can only send predefined messages from the section below.
-        </div>
       </div>
 
-      {/* PREDEFINED MESSAGES */}
-      <div className="w-full max-w-3xl mt-4 p-4 bg-blue-50 rounded-xl border border-blue-100">
-        <h2 className="text-sm font-semibold text-blue-800 mb-2">
-          Suggested polite messages
-        </h2>
-        <div className="space-y-2">
-          {PREDEFINED_MESSAGES.map((msg, idx) => (
-            <div
-              key={idx}
-              className="flex items-start justify-between bg-white border border-blue-100 rounded-md px-3 py-2"
-            >
-              <p className="text-xs text-gray-800 pr-3">{msg}</p>
-              <button
-                onClick={() => handleUsePredefined(msg)}
-                className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded-md"
-              >
-                Send
-              </button>
-            </div>
-          ))}
-        </div>
+      {/* PREDEFINED MESSAGES AREA */}
+      <div className="w-full max-w-3xl space-y-5 pb-2">
+          
+          {/* 1. STARTERS (Üst Kısım - Başlatıcılar) */}
+          <div>
+              <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">Start Conversation</h3>
+              <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
+                  {STARTER_MESSAGES.map((msg, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => handleSend(msg)}
+                        className="flex-shrink-0 bg-white border border-indigo-100 text-indigo-700 text-xs font-medium py-2.5 px-4 rounded-xl shadow-sm hover:bg-indigo-50 hover:border-indigo-300 transition-all whitespace-nowrap"
+                      >
+                        {msg}
+                      </button>
+                  ))}
+              </div>
+          </div>
+
+          {/* 2. REPLIES (Alt Kısım - Cevaplar) */}
+          <div>
+              <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">Quick Replies</h3>
+              <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
+                  {REPLY_MESSAGES.map((msg, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => handleSend(msg)}
+                        className="flex-shrink-0 bg-slate-800 text-white text-xs font-medium py-2.5 px-4 rounded-xl shadow-sm hover:bg-slate-700 transition-all whitespace-nowrap flex items-center"
+                      >
+                        {msg} <Send className="w-3 h-3 ml-2 opacity-70"/>
+                      </button>
+                  ))}
+              </div>
+          </div>
+
       </div>
     </div>
   );
